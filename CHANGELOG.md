@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.1
+- Fixed: containers in chunks that are already loaded when the plugin starts (spawn, `/forceload`, `/reload`) were not synced. Old locks from 1.0.0 in such chunks never became owners in the search.
+
 ## 1.2.0
 - No more chest protection: everyone can open and break every chest, like in vanilla. Old locks become owners.
 - The server reads chest contents itself and sends them to the client mod's search, without anyone having to open the chest: to the owner, their group and the players they trust (`/truhe vertrauen`).
