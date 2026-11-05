@@ -87,3 +87,6 @@ Englisch, Deutsch, Portugiesisch (BR), Russisch, Türkisch. Andere Sprachen → 
 ```
 Jar liegt dann in `build/libs/`. Gradle lädt bei Bedarf selbst ein passendes JDK 21 herunter.
 Die Tests (MockBukkit) laufen beim Build mit.
+
+## Lizenz
+MIT – siehe [LICENSE](LICENSE).
