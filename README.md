@@ -4,7 +4,7 @@ PaperMC-Plugin: Truhen sichern und mit anderen Spielern, Freunden und Gruppen te
 Läuft auf Paper **1.21.x und 26.x** (Java 21+, getestet auf 1.21.11 und 26.3).
 
 Passender Client-Mod mit Bedienung per Klick statt Befehlen:
-[txmazing/Noobs-Container-Searcher, Branch `truhenschutz`](https://github.com/txmazing/Noobs-Container-Searcher/tree/truhenschutz)
+[glandit/Noobs-Container-Searcher, Branch `truhenschutz`](https://github.com/glandit/Noobs-Container-Searcher/tree/truhenschutz)
 (Fork von [nooobfly/Noobs-Container-Searcher](https://github.com/nooobfly/Noobs-Container-Searcher)).
 Das Plugin funktioniert auch ohne Mod – dann über Befehle.
 
