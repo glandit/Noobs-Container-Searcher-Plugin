@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+- Only for players with the client mod: players without it don't see `/truhe` and `/gruppe`. Typing them only shows a hint that the mod is needed. Admins can still use `/truhe reload`.
+- Players without the mod get no chat messages from the plugin (group invitations, "this chest is yours now", friend notices).
+- Group invitations to players without the mod fail with a message to the leader. The online list in the mod only shows players with the mod.
+- Chests still get an owner when players without the mod place them or open them first, without a message. So no one else can claim them.
+
 ## 1.2.1
 - Fixed: containers in chunks that are already loaded when the plugin starts (spawn, `/forceload`, `/reload`) were not synced. Old locks from 1.0.0 in such chunks never became owners in the search.
 

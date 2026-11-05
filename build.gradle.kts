@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "de.noobs"
-version = "1.2.1"
+version = "1.3.0"
 
 val paperApi = "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT"
 
