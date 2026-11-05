@@ -8,8 +8,11 @@ Passender Client-Mod mit Bedienung per Klick statt Befehlen:
 (Fork von [nooobfly/Noobs-Container-Searcher](https://github.com/nooobfly/Noobs-Container-Searcher)).
 Das Plugin funktioniert auch ohne Mod – dann über Befehle.
 
-## Installation
-`Noobs-Container-Searcher-1.0.0.jar` in den `plugins/`-Ordner legen, Server neu starten.
+## Download & Installation
+- **Plugin:** [Releases](https://github.com/glandit/Noobs-Container-Searcher-Plugin/releases) →
+  `Noobs-Container-Searcher-1.0.0.jar` in den `plugins/`-Ordner legen, Server neu starten.
+- **Mod (optional, für die Spieler):** [Mod-Releases](https://github.com/glandit/Noobs-Container-Searcher/releases) →
+  Jar passend zu Minecraft-Version und Loader (Fabric oder NeoForge) in den `mods/`-Ordner.
 
 ## So funktioniert's
 - Neue Truhe/Fass platzieren → automatisch **deine** (nur du kannst öffnen & abbauen).
