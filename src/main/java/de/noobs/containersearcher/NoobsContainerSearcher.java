@@ -17,6 +17,7 @@ public class NoobsContainerSearcher extends JavaPlugin {
     private ChestService chestService;
     private GroupService groupService;
     private ModChannel modChannel;
+    private ContainerSync containerSync;
     private ClientSync sync = ClientSync.NONE;
 
     @Override
@@ -35,12 +36,21 @@ public class NoobsContainerSearcher extends JavaPlugin {
         modChannel = new ModChannel(this);
         modChannel.register();
         sync = modChannel;
+        containerSync = new ContainerSync(this);
+        containerSync.register();
 
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         register("truhe", new TruheCommand(this));
         register("gruppe", new GruppeCommand(this));
 
         getLogger().info("Truhen-Schutz aktiv für: " + getConfig().getStringList("lockable-blocks"));
+    }
+
+    @Override
+    public void onDisable() {
+        if (containerSync != null) {
+            containerSync.saveNow();
+        }
     }
 
     private void register(String name, TabExecutor executor) {
@@ -92,6 +102,10 @@ public class NoobsContainerSearcher extends JavaPlugin {
 
     public ModChannel modChannel() {
         return modChannel;
+    }
+
+    public ContainerSync containerSync() {
+        return containerSync;
     }
 
     public ClientSync sync() {

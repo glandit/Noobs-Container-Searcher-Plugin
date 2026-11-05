@@ -46,6 +46,18 @@ auch auf Truhen, die erst später gebaut werden.
 Jeder Spieler kann in einer Gruppe sein. Beitritt nur per Einladung.
 Mitglieder dürfen Gruppen-Truhen auch abbauen – abschaltbar mit `groups.members-can-break: false`.
 
+## Truhen-Sync unter Freunden
+Mit dem Client-Mod (Branch `truhenschutz`) kennen Freunde und Gruppenmitglieder die Truhen der anderen,
+ohne sie selbst geöffnet zu haben: **Wer eine Truhe öffnet, schickt ihren Inhalt an alle Freunde, die sie öffnen dürfen.**
+- **Freunde** sind Spieler, bei denen einer dem anderen vertraut (`/truhe vertrauen`) oder die in derselben Gruppe sind.
+- Empfänger bekommen den Stand nur, wenn sie die Truhe selbst öffnen dürften (ungesichert, Besitzer, geteilt, Freund
+  des Besitzers, Gruppe des Besitzers).
+- Der Server prüft, dass der Absender die Truhe öffnen darf und in der Nähe steht, und merkt sich den letzten Stand
+  (`plugins/Noobs-Container-Searcher/sync.json`). Wer später beitritt, bekommt ihn nachgeschickt. Beim Abbau wird er gelöscht.
+- Der Inhalt wird vom Mod gepackt (JSON, gzip, base64); der Server leitet ihn nur weiter und liest ihn nicht.
+- Ein Spieler kann das im Mod abschalten (`shareWithFriends` in `config/noobs-container-searcher/settings.json`).
+- Server-Schalter: `sync.enabled` und `sync.max-entries` in der `config.yml`.
+
 ## Bedienung im Mod „Noob's Container Searcher“ (statt Befehlen)
 Wer den Client-Mod hat, bekommt im Fenster (Taste `G`) einen Tab **„Gruppe“** –
 aber nur auf Servern mit diesem Plugin:

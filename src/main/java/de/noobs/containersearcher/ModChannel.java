@@ -44,11 +44,13 @@ import static de.noobs.containersearcher.Messages.nameOf;
  *   {"t":"share"|"unshare","pos":[x,y,z],"player":"Name"}
  *   {"t":"trust"|"untrust","player":"Name"}
  *   {"t":"group","op":"create|invite|accept|decline|leave|kick|disband","arg":"..."}
+ *   {"t":"sync","pos":[x,y,z],"dim":"...","data":"base64(gzip(json))"}   Truheninhalt für Freunde
  * Server → Mod
  *   {"t":"hello","v":1}
  *   {"t":"state","group":{...}|null,"invite":{...}|null,"friends":[...],"online":[...]}
  *   {"t":"chest","pos":[x,y,z],"status":"none|unloaded|unlocked|locked",...}
  *   {"t":"result","action":"share","ok":true,"msg":"..."}
+ *   {"t":"sync","pos":[x,y,z],"dim":"...","by":"Name","ts":123,"data":"..."}   Truheninhalt eines Freundes
  * </pre>
  *
  * Der Server prüft bei jeder Aktion selbst die Rechte – der Mod ist nur die Bedienoberfläche.
@@ -57,7 +59,7 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
 
     public static final String CHANNEL = "noobs_container_searcher:protect";
     public static final int VERSION = 1;
-    private static final int MAX_BYTES = 16 * 1024;
+    private static final int MAX_BYTES = 32_766; // Obergrenze einer Plugin-Nachricht
     private static final int MAX_PER_SECOND = 20;
     private static final int MAX_ONLINE_NAMES = 200;
 
@@ -148,7 +150,9 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
                 hello.addProperty("v", VERSION);
                 send(player, hello);
                 sendState(player);
+                plugin.containerSync().sendAll(player);
             }
+            case "sync" -> plugin.containerSync().receive(player, in);
             case "info" -> {
                 int[] pos = pos(in);
                 if (pos != null) {
@@ -346,7 +350,7 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         send(player, out);
     }
 
-    private void send(Player player, JsonObject message) {
+    void send(Player player, JsonObject message) {
         transport.accept(player, writeString(message.toString()));
     }
 

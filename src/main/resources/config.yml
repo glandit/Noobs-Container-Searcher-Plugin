@@ -40,3 +40,11 @@ groups:
   members-can-break: true
   # Wie lange eine Einladung gültig ist (Sekunden).
   invite-seconds: 300
+
+# Truhen-Sync (nur mit dem Client-Mod): Wer eine Truhe öffnet, schickt ihren Inhalt an Freunde und Gruppenmitglieder,
+# die die Truhe selbst öffnen dürften. Der letzte Stand wird gemerkt und beim Beitritt nachgeschickt.
+# Freunde: einer vertraut dem anderen (/truhe vertrauen) oder beide sind in einer Gruppe.
+sync:
+  enabled: true
+  # Wie viele Truhen höchstens gemerkt werden (die ältesten fliegen zuerst raus)
+  max-entries: 5000
