@@ -10,7 +10,7 @@ Das Plugin funktioniert auch ohne Mod – dann über Befehle.
 
 ## Download & Installation
 - **Plugin:** [Releases](https://github.com/glandit/Noobs-Container-Searcher-Plugin/releases) →
-  `Noobs-Container-Searcher-1.0.0.jar` in den `plugins/`-Ordner legen, Server neu starten.
+  `Noobs-Container-Searcher-1.1.0.jar` in den `plugins/`-Ordner legen, Server neu starten.
 - **Mod (optional, für die Spieler):** [Mod-Releases](https://github.com/glandit/Noobs-Container-Searcher/releases) →
   Jar passend zu Minecraft-Version und Loader (Fabric oder NeoForge) in den `mods/`-Ordner.
 
