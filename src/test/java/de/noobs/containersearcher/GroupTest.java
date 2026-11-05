@@ -33,6 +33,12 @@ class GroupTest {
         anna = server.addPlayer("Anna");
         ben = server.addPlayer("Ben");
         carl = server.addPlayer("Carl");
+        // Gruppen gibt es nur mit dem Client-Mod
+        plugin.modChannel().setTransport((player, bytes) -> { });
+        for (PlayerMock player : new PlayerMock[]{anna, ben, carl}) {
+            plugin.modChannel().onPluginMessageReceived(ModChannel.CHANNEL, player,
+                    ModChannel.writeString("{\"t\":\"hello\",\"v\":2}"));
+        }
     }
 
     @AfterEach

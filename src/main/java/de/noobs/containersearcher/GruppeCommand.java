@@ -48,8 +48,10 @@ public final class GruppeCommand implements TabExecutor {
     private final GroupStore groups;
     private final GroupService service;
     private final Messages messages;
+    private final ModChannel channel;
 
     public GruppeCommand(NoobsContainerSearcher plugin) {
+        this.channel = plugin.modChannel();
         this.groups = plugin.groups();
         this.service = plugin.groupService();
         this.messages = plugin.messages();
@@ -60,6 +62,10 @@ public final class GruppeCommand implements TabExecutor {
                              @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
             messages.send(sender, "no-player");
+            return true;
+        }
+        if (!channel.isModClient(player)) {
+            messages.sendAlways(player, "needs-mod");
             return true;
         }
         Sub sub;
@@ -112,7 +118,7 @@ public final class GruppeCommand implements TabExecutor {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                 @NotNull String label, @NotNull String[] args) {
-        if (!(sender instanceof Player player)) {
+        if (!(sender instanceof Player player) || !channel.isModClient(player)) {
             return List.of();
         }
         if (args.length == 1) {

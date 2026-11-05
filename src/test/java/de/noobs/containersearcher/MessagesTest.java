@@ -97,6 +97,10 @@ class MessagesTest {
     private PlayerMock player(String name, Locale locale) {
         PlayerMock player = server.addPlayer(name);
         player.setLocale(locale);
+        // Befehle und Chat-Nachrichten gibt es nur mit dem Client-Mod
+        ModChannel channel = ((NoobsContainerSearcher) server.getPluginManager().getPlugin("Noobs-Container-Searcher")).modChannel();
+        channel.setTransport((p, bytes) -> { });
+        channel.onPluginMessageReceived(ModChannel.CHANNEL, player, ModChannel.writeString("{\"t\":\"hello\",\"v\":2}"));
         return player;
     }
 

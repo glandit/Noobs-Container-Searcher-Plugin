@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 /**
@@ -42,6 +43,7 @@ public final class Messages {
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, YamlConfiguration> languages = new HashMap<>();
     private @Nullable String fixedLanguage;
+    private Predicate<Player> reachable = player -> true;
 
     /** @param setting "auto" oder ein Sprachcode wie "de_de" */
     public void load(JavaPlugin plugin, String setting) {
@@ -137,7 +139,24 @@ public final class Messages {
 
     // ------------------------------------------------------------------ Senden
 
+    /**
+     * Wer darf Chat-Nachrichten des Plugins bekommen? Spieler ohne den Client-Mod bekommen keine
+     * (Einladungen, "gehört jetzt dir" usw.) – siehe {@link #send} und {@link #sendAlways}.
+     */
+    public void setReachable(Predicate<Player> reachable) {
+        this.reachable = reachable;
+    }
+
+    /** Nachricht in den Chat – Spieler ohne den Client-Mod bekommen sie nicht. */
     public void send(CommandSender target, String key, TagResolver... placeholders) {
+        if (target instanceof Player player && !reachable.test(player)) {
+            return;
+        }
+        sendAlways(target, key, placeholders);
+    }
+
+    /** Wie {@link #send}, aber auch an Spieler ohne Mod – nur als Antwort auf ihren eigenen Befehl. */
+    public void sendAlways(CommandSender target, String key, TagResolver... placeholders) {
         List<String> lines = lines(target, key);
         if (lines != null) {
             for (String line : lines) {
@@ -149,6 +168,9 @@ public final class Messages {
     }
 
     public void actionBar(Player target, String key, TagResolver... placeholders) {
+        if (!reachable.test(target)) {
+            return;
+        }
         target.sendActionBar(miniMessage.deserialize(raw(target, key), placeholders));
     }
 

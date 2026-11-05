@@ -459,6 +459,7 @@ class SyncTest {
     // ------------------------------------------------------------------ /truhe info
 
     private String infoText(PlayerMock player, Block block) {
+        hello(player); // /truhe gibt es nur mit dem Mod
         plugin.setTargetFinder(p -> block);
         while (player.nextComponentMessage() != null) {
             // alte Nachrichten verwerfen

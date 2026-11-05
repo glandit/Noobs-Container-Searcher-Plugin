@@ -15,7 +15,7 @@ import static de.noobs.containersearcher.Messages.placeholder;
 
 /**
  * Gruppen- und Freunde-Aktionen – genutzt von /gruppe, /truhe vertrauen und vom Mod-UI.
- * Benachrichtigt andere Spieler im Chat und meldet Änderungen an {@link ClientSync}.
+ * Benachrichtigt andere Spieler im Chat (nur mit Mod, siehe {@link Messages#send}) und meldet Änderungen an {@link ClientSync}.
  */
 public final class GroupService {
 
@@ -64,6 +64,10 @@ public final class GroupService {
         }
         if (groups.groupOf(target.getUniqueId()) != null) {
             return Result.fail("group-target-in-other", placeholder("player", target.getName()));
+        }
+        // ohne Mod kann er die Einladung weder sehen noch annehmen
+        if (!plugin.modChannel().isModClient(target)) {
+            return Result.fail("group-target-no-mod", placeholder("player", target.getName()));
         }
         int seconds = plugin.settings().groupInviteSeconds();
         groups.invite(group, player.getUniqueId(), target.getUniqueId(), seconds * 1000L);

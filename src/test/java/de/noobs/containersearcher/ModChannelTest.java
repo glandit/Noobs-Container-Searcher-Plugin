@@ -70,6 +70,7 @@ class ModChannelTest {
 
     @Test
     void helloAnswersWithHelloAndState() {
+        send(ben, "{\"t\":\"hello\",\"v\":2}"); // in der Online-Liste stehen nur Spieler mit Mod
         send(anna, "{\"t\":\"hello\",\"v\":2}");
         assertEquals(2, last(anna, "hello").get("v").getAsInt());
         JsonObject state = last(anna, "state");

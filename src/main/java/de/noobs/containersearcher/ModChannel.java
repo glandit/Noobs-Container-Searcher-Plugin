@@ -9,6 +9,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -61,6 +64,9 @@ import static de.noobs.containersearcher.Messages.nameOf;
  *
  * <p>Jeder sieht die Inhalte seiner eigenen Container, die seiner Gruppe und die von Spielern,
  * die ihn als Freund eingetragen haben. Mods mit Version 1 bekommen nur Gruppe und Freunde.
+ *
+ * <p>Wer sich hier nie meldet, hat den Mod nicht: Er sieht /truhe und /gruppe nicht, kann sie nicht
+ * nutzen und bekommt keine Chat-Nachrichten des Plugins ({@link Messages#setReachable}).
  */
 public final class ModChannel implements PluginMessageListener, Listener, ClientSync, ContainerIndex.Listener {
 
@@ -132,6 +138,7 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         this.transport = transport;
     }
 
+    /** Hat der Spieler den Client-Mod? Nur dann darf er /truhe und /gruppe nutzen und bekommt Nachrichten. */
     public boolean isModClient(Player player) {
         return clients.containsKey(player.getUniqueId());
     }
@@ -164,24 +171,45 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
     private void handle(Player player, JsonObject in) {
         String type = string(in, "t");
         UUID uuid = player.getUniqueId();
-        clients.putIfAbsent(uuid, 1);
+        if (clients.putIfAbsent(uuid, 1) == null) {
+            player.updateCommands(); // /truhe und /gruppe erst jetzt zeigen, siehe onCommandSend
+            // die anderen sehen ihn jetzt in der Online-Liste
+            refresh(clients.keySet().stream().filter(other -> !other.equals(uuid)).toList());
+        }
         switch (type) {
             case "hello" -> {
                 int version = Math.max(1, number(in, "v"));
-                clients.put(uuid, version);
                 plugin.getLogger().info(player.getName() + " uses the mod Noob's Container Searcher"
                         + (version >= 2 ? " (chest sync on)." : " (old version, no chest sync)."));
-                JsonObject hello = message("hello");
-                hello.addProperty("v", VERSION);
-                send(player, hello);
-                sendState(player);
-                requestFullSync(player);
+                welcome(player, version);
             }
             case "sync" -> requestFullSync(player);
             case "trust" -> result(player, type, plugin.groupService().trust(player, string(in, "player")));
             case "untrust" -> result(player, type, plugin.groupService().untrust(player, string(in, "player")));
             case "group" -> groupAction(player, in);
             default -> { }
+        }
+    }
+
+    private void welcome(Player player, int version) {
+        clients.put(player.getUniqueId(), version);
+        JsonObject hello = message("hello");
+        hello.addProperty("v", VERSION);
+        send(player, hello);
+        sendState(player);
+        requestFullSync(player);
+    }
+
+    /**
+     * Nach /reload: Der Mod schickt sein Hallo nur einmal pro Verbindung. Wer unseren Kanal angemeldet hat,
+     * hat den Mod (Vanilla meldet keine fremden Kanäle an) – also gleich wieder als Mod-Spieler behandeln.
+     */
+    public void adoptOnlinePlayers() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!isModClient(player) && player.getListeningPluginChannels().contains(CHANNEL)) {
+                welcome(player, VERSION);
+                player.updateCommands();
+            }
         }
     }
 
@@ -279,8 +307,9 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         }
         out.add("friend_of", friendOf);
         JsonArray online = new JsonArray();
+        // nur Spieler mit Mod: nur sie können Einladungen annehmen
         Bukkit.getOnlinePlayers().stream()
-                .filter(p -> !p.equals(player) && player.canSee(p))
+                .filter(p -> !p.equals(player) && player.canSee(p) && isModClient(p))
                 .map(Player::getName)
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .limit(MAX_ONLINE_NAMES)
@@ -428,6 +457,34 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
     }
 
     // ------------------------------------------------------------------ Events
+
+    /** Spieler ohne Mod bekommen /truhe und /gruppe nicht vorgeschlagen. Der Mod meldet sich erst nach dem Join. */
+    @EventHandler
+    public void onCommandSend(PlayerCommandSendEvent event) {
+        if (!isModClient(event.getPlayer())) {
+            event.getCommands().removeAll(ownCommands());
+        }
+    }
+
+    /** truhe, gruppe und alle Aliase, auch mit "noobs-container-searcher:" davor. */
+    private Set<String> ownCommands() {
+        String prefix = plugin.getName().toLowerCase(Locale.ROOT) + ":";
+        Set<String> names = new LinkedHashSet<>();
+        for (String command : List.of("truhe", "gruppe")) {
+            PluginCommand pluginCommand = plugin.getCommand(command);
+            if (pluginCommand == null) {
+                continue;
+            }
+            List<String> all = new ArrayList<>(pluginCommand.getAliases());
+            all.add(pluginCommand.getName());
+            for (String name : all) {
+                String lower = name.toLowerCase(Locale.ROOT);
+                names.add(lower);
+                names.add(prefix + lower);
+            }
+        }
+        return names;
+    }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {

@@ -62,12 +62,15 @@ public class NoobsContainerSearcher extends JavaPlugin {
         modChannel.register();
         index.setListener(modChannel);
         sync = modChannel;
+        // Spieler ohne den Client-Mod bekommen keine Nachrichten des Plugins
+        messages.setReachable(modChannel::isModClient);
 
         getServer().getPluginManager().registerEvents(new ContainerTracker(this), this);
         getServer().getScheduler().runTaskTimer(this, () -> index.process(PROCESS_BUDGET), PROCESS_TICKS, PROCESS_TICKS);
         getServer().getScheduler().runTaskTimer(this, index::saveAsync, SAVE_TICKS, SAVE_TICKS);
         register("truhe", new TruheCommand(this));
         register("gruppe", new GruppeCommand(this));
+        modChannel.adoptOnlinePlayers();
 
         getLogger().info("Syncing " + index.all().size() + " known containers. Tracked blocks: "
                 + getConfig().getStringList("tracked-blocks"));

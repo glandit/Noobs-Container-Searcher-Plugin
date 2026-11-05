@@ -59,6 +59,16 @@ public final class TruheCommand implements TabExecutor {
                              @NotNull String label, @NotNull String[] args) {
         Sub sub = args.length == 0 ? Sub.HELP : ALIASES.getOrDefault(args[0].toLowerCase(Locale.ROOT), Sub.HELP);
 
+        // ohne den Client-Mod nur der Hinweis – und /truhe reload für Admins
+        if (sender instanceof Player player && !plugin.modChannel().isModClient(player)) {
+            if (sub == Sub.RELOAD && player.hasPermission(ADMIN_PERMISSION)) {
+                plugin.reload();
+                messages.sendAlways(player, "reloaded");
+            } else {
+                messages.sendAlways(player, "needs-mod");
+            }
+            return true;
+        }
         if (sub == Sub.HELP) {
             messages.send(sender, "help", placeholder("label", label));
             return true;
@@ -138,6 +148,9 @@ public final class TruheCommand implements TabExecutor {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                 @NotNull String label, @NotNull String[] args) {
+        if (sender instanceof Player player && !plugin.modChannel().isModClient(player)) {
+            return args.length == 1 && player.hasPermission(ADMIN_PERMISSION) ? filter(List.of("reload"), args[0]) : List.of();
+        }
         if (args.length == 1) {
             List<String> options = new ArrayList<>(messages.isGerman(sender) ? SUGGESTED_DE : SUGGESTED_EN);
             if (sender.hasPermission(ADMIN_PERMISSION)) {

@@ -8,7 +8,9 @@ Läuft auf Paper **1.21.x und 26.x** (Java 21+, getestet auf 26.3).
 Passender Client-Mod:
 [glandit/Noobs-Container-Searcher, Branch `truhenschutz`](https://github.com/glandit/Noobs-Container-Searcher/tree/truhenschutz)
 (Fork von [nooobfly/Noobs-Container-Searcher](https://github.com/nooobfly/Noobs-Container-Searcher)).
-Ohne Mod funktionieren nur die Befehle; die Kisteninhalte sieht man nur mit Mod.
+**Nur mit Mod:** Spieler ohne den Mod sehen `/truhe` und `/gruppe` nicht, bekommen beim Eintippen nur
+einen Hinweis auf den Mod und keine Chat-Nachrichten des Plugins (Einladungen, „gehört jetzt dir“ usw.).
+Einladen kann man nur Spieler mit Mod. Admins können `/truhe reload` auch ohne Mod nutzen.
 
 **Geschützt wird nichts.** Alle können alle Truhen öffnen und abbauen, wie in Vanilla.
 Besitz und Gruppen bestimmen nur, wer welche Inhalte in seiner Suche sieht.
@@ -24,6 +26,7 @@ Besitz und Gruppen bestimmen nur, wer welche Inhalte in seiner Suche sieht.
 - Truhen von vor der Installation (und Loot-Truhen) gehören dem, der sie **als Erster öffnet**.
   Abschaltbar mit `claim-on-first-open: false`.
 - Wird eine Truhe zur Doppeltruhe erweitert, behält sie ihren Besitzer.
+- Das gilt auch für Spieler ohne Mod – nur ohne Nachricht. So kann niemand sonst ihre Truhen übernehmen.
 
 ## Wer sieht was?
 | Wer | sieht in der Suche |
@@ -46,7 +49,7 @@ Verlässt jemand die Gruppe oder wird als Freund entfernt, verschwinden die frem
 | `/truhe freunde` | Freundesliste |
 | `/truhe reload` | Config neu laden (Admin) |
 | `/gruppe erstellen <Name>` | Gruppe gründen (du bist Anführer) |
-| `/gruppe einladen <Spieler>` | Spieler einladen (nur Anführer, Spieler muss online sein) |
+| `/gruppe einladen <Spieler>` | Spieler einladen (nur Anführer, Spieler muss online sein und den Mod haben) |
 | `/gruppe annehmen` / `ablehnen` | Einladung beantworten (oder im Chat anklicken) |
 | `/gruppe info` | Mitglieder anzeigen (grün = online) |
 | `/gruppe verlassen` | Gruppe verlassen (Anführer geht → nächstes Mitglied übernimmt) |
@@ -54,6 +57,7 @@ Verlässt jemand die Gruppe oder wird als Freund entfernt, verschwinden die frem
 | `/gruppe auflösen` | Gruppe löschen (nur Anführer) |
 
 Aliase: `/ncs`, `/kiste` und `/group`. Englisch geht auch: `/ncs trust`, `/group invite` usw.
+Alle Befehle gibt es nur mit Mod. Der Mod meldet sich kurz nach dem Betreten des Servers, ab dann sind sie da.
 
 ## Im Mod
 Im Fenster des Mods (Taste `G`) gibt es auf Servern mit diesem Plugin den Tab **„Gruppe“**:
@@ -87,7 +91,7 @@ Englisch, Deutsch, Portugiesisch (BR), Russisch, Türkisch. Andere Sprachen → 
 - Nach einem Update mit geänderten Texten wird die alte Datei als `<sprache>.yml.old` gesichert.
 
 ## Rechte
-- `ncs.use` – Befehle nutzen (Standard: alle)
+- `ncs.use` – Befehle nutzen (Standard: alle mit Mod)
 - `ncs.admin` – volle `/ncs info` bei allen Truhen, `/ncs reload` (Standard: OP)
 
 ## Selbst bauen

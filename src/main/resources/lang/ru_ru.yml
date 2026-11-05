@@ -6,6 +6,7 @@ nobody: "никто"
 
 no-player: "<red>Эту команду могут использовать только игроки."
 no-permission: "<red>У вас нет на это прав."
+needs-mod: "<yellow>Для этого нужен мод <white>Noob's Container Searcher</white>. <gray>С ним поиск показывает ваши сундуки и сундуки вашей группы и друзей."
 no-target: "<red>Посмотрите на сундук, бочку или шалкер (макс. <distance> блоков)."
 unknown-player: "<red>Игрок <white><player></white> ни разу не заходил на сервер."
 reloaded: "<green>Конфигурация перезагружена."
@@ -76,6 +77,7 @@ group-not-leader: "<red>Это может сделать только лидер
 group-player-offline: "<red><white><player></white> сейчас не в сети."
 group-already-in: "<yellow><white><player></white> уже в вашей группе."
 group-target-in-other: "<red><white><player></white> уже состоит в другой группе."
+group-target-no-mod: "<red><white><player></white> не может вступить в группу: нет мода Noob's Container Searcher."
 group-invited: "<green>Приглашение отправлено игроку <white><player></white>."
 group-invite-received:
   - "<gold><white><player></white> приглашает вас в группу <white><group></white>!"
