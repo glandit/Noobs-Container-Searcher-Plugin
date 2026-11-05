@@ -6,8 +6,6 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,9 +17,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -38,35 +37,46 @@ import static de.noobs.containersearcher.Messages.nameOf;
  *
  * <pre>
  * Mod → Server
- *   {"t":"hello","v":1}
- *   {"t":"info","pos":[x,y,z]}
- *   {"t":"lock"|"unlock","pos":[x,y,z]}
- *   {"t":"share"|"unshare","pos":[x,y,z],"player":"Name"}
+ *   {"t":"hello","v":2}
+ *   {"t":"sync"}                                   alles noch einmal schicken
  *   {"t":"trust"|"untrust","player":"Name"}
  *   {"t":"group","op":"create|invite|accept|decline|leave|kick|disband","arg":"..."}
- *   {"t":"sync","pos":[x,y,z],"dim":"...","data":"base64(gzip(json))"}   Truheninhalt für Freunde
  * Server → Mod
- *   {"t":"hello","v":1}
+ *   {"t":"hello","v":2}
  *   {"t":"state","group":{...}|null,"invite":{...}|null,"friends":[...],"online":[...]}
- *   {"t":"chest","pos":[x,y,z],"status":"none|unloaded|unlocked|locked",...}
- *   {"t":"result","action":"share","ok":true,"msg":"..."}
- *   {"t":"sync","pos":[x,y,z],"dim":"...","by":"Name","ts":123,"data":"..."}   Truheninhalt eines Freundes
+ *   {"t":"result","action":"group:create","ok":true,"msg":"..."}
+ *   {"t":"sync_begin"}  {"t":"containers","list":[C,...]}...  {"t":"sync_end"}
+ *   {"t":"container",...C}                          ein Container ist neu oder hat sich geändert
+ *   {"t":"container_gone","dim":"...","pos":[x,y,z]}
+ *
+ *   C = {"dim":"minecraft:overworld","pos":[x,y,z],"pos2":[x,y,z]?,"type":"minecraft:chest",
+ *        "owner":"Anna","mine":true,"at":1730000000000,
+ *        "items":[{"id":"minecraft:diamond","n":5,"d":"Base64 von ItemStack#serializeAsBytes"}]}
  * </pre>
  *
- * Der Server prüft bei jeder Aktion selbst die Rechte – der Mod ist nur die Bedienoberfläche.
+ * Der Mod nimmt höchstens 65536 Zeichen pro Nachricht an. Längere Nachrichten gehen in Stücken:
+ * {@code #frag <id> <nr> <anzahl>\n<teil>} – der Mod setzt sie wieder zusammen.
+ *
+ * <p>Jeder sieht die Inhalte seiner eigenen Container, die seiner Gruppe und die von Spielern,
+ * die ihn als Freund eingetragen haben. Mods mit Version 1 bekommen nur Gruppe und Freunde.
  */
-public final class ModChannel implements PluginMessageListener, Listener, ClientSync {
+public final class ModChannel implements PluginMessageListener, Listener, ClientSync, ContainerIndex.Listener {
 
     public static final String CHANNEL = "noobs_container_searcher:protect";
-    public static final int VERSION = 1;
-    private static final int MAX_BYTES = 32_766; // Obergrenze einer Plugin-Nachricht
+    public static final int VERSION = 2;
+    /** Unter der Grenze des Mods (65536 Zeichen), mit Luft für den Stück-Kopf. */
+    static final int MAX_CHARS = 60_000;
+    private static final int MAX_BYTES = 16 * 1024;
     private static final int MAX_PER_SECOND = 20;
     private static final int MAX_ONLINE_NAMES = 200;
+    private static final long SYNC_COOLDOWN_MS = 5_000L;
 
     private final NoobsContainerSearcher plugin;
-    private final Set<UUID> clients = new HashSet<>();
+    private final Map<UUID, Integer> clients = new HashMap<>();
     private final Map<UUID, long[]> rate = new HashMap<>();
+    private final Map<UUID, Long> lastRequestedSync = new HashMap<>();
     private BiConsumer<Player, byte[]> transport;
+    private int nextFragment;
 
     public ModChannel(NoobsContainerSearcher plugin) {
         this.plugin = plugin;
@@ -116,7 +126,11 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
     }
 
     public boolean isModClient(Player player) {
-        return clients.contains(player.getUniqueId());
+        return clients.containsKey(player.getUniqueId());
+    }
+
+    private boolean syncs(UUID player) {
+        return clients.getOrDefault(player, 0) >= 2;
     }
 
     // ------------------------------------------------------------------ Empfangen
@@ -142,52 +156,32 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
 
     private void handle(Player player, JsonObject in) {
         String type = string(in, "t");
-        clients.add(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        clients.putIfAbsent(uuid, 1);
         switch (type) {
             case "hello" -> {
-                plugin.getLogger().info(player.getName() + " nutzt den Mod Noob's Container Searcher (Gruppe-Tab aktiv).");
+                int version = Math.max(1, number(in, "v"));
+                clients.put(uuid, version);
+                plugin.getLogger().info(player.getName() + " uses the mod Noob's Container Searcher"
+                        + (version >= 2 ? " (chest sync on)." : " (old version, no chest sync)."));
                 JsonObject hello = message("hello");
                 hello.addProperty("v", VERSION);
                 send(player, hello);
                 sendState(player);
-                plugin.containerSync().sendAll(player);
-            }
-            case "sync" -> plugin.containerSync().receive(player, in);
-            case "info" -> {
-                int[] pos = pos(in);
-                if (pos != null) {
-                    send(player, chest(player, pos));
+                if (mayRequestSync(uuid)) {
+                    fullSync(player);
                 }
             }
-            case "lock", "unlock", "share", "unshare" -> chestAction(player, type, in);
+            case "sync" -> {
+                if (mayRequestSync(uuid)) {
+                    fullSync(player);
+                }
+            }
             case "trust" -> result(player, type, plugin.groupService().trust(player, string(in, "player")));
             case "untrust" -> result(player, type, plugin.groupService().untrust(player, string(in, "player")));
             case "group" -> groupAction(player, in);
             default -> { }
         }
-    }
-
-    private void chestAction(Player player, String type, JsonObject in) {
-        int[] pos = pos(in);
-        if (pos == null) {
-            return;
-        }
-        Block block = loadedBlock(player, pos);
-        if (block == null || !plugin.locks().isLockable(block)) {
-            result(player, type, Result.fail("chest-unavailable"));
-            send(player, chest(player, pos));
-            return;
-        }
-        ChestService chests = plugin.chestService();
-        String target = string(in, "player");
-        Result result = switch (type) {
-            case "lock" -> chests.lock(player, block);
-            case "unlock" -> chests.unlock(player, block);
-            case "share" -> chests.share(player, block, target);
-            default -> chests.unshare(player, block, target);
-        };
-        result(player, type, result);
-        send(player, chest(player, pos));
     }
 
     private void groupAction(Player player, JsonObject in) {
@@ -210,20 +204,31 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         }
     }
 
-    // ------------------------------------------------------------------ Senden
+    // ------------------------------------------------------------------ Gruppe, Freunde
 
     @Override
     public void refresh(Collection<UUID> players) {
         for (UUID uuid : Set.copyOf(players)) {
             Player online = Bukkit.getPlayer(uuid);
-            if (online != null && clients.contains(uuid)) {
+            if (online != null && clients.containsKey(uuid)) {
                 sendState(online);
             }
         }
     }
 
+    @Override
+    public void resync(Collection<UUID> players) {
+        for (UUID uuid : Set.copyOf(players)) {
+            Player online = Bukkit.getPlayer(uuid);
+            if (online != null && clients.containsKey(uuid)) {
+                sendState(online);
+                fullSync(online);
+            }
+        }
+    }
+
     private void refreshAll() {
-        refresh(clients);
+        refresh(List.copyOf(clients.keySet()));
     }
 
     public void sendState(Player player) {
@@ -266,6 +271,12 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         }
 
         out.add("friends", names(plugin.trust().friendsOf(me)));
+        // wer mich als Freund eingetragen hat – deren Kisten sehe ich in der Suche
+        JsonArray friendOf = new JsonArray();
+        for (UUID owner : plugin.trust().ownersTrusting(me)) {
+            friendOf.add(nameOf(owner));
+        }
+        out.add("friend_of", friendOf);
         JsonArray online = new JsonArray();
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> !p.equals(player) && player.canSee(p))
@@ -274,72 +285,7 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
                 .limit(MAX_ONLINE_NAMES)
                 .forEach(online::add);
         out.add("online", online);
-        out.addProperty("members_can_break", plugin.settings().groupMembersCanBreak());
         return out;
-    }
-
-    JsonObject chest(Player player, int[] pos) {
-        JsonObject out = message("chest");
-        JsonArray p = new JsonArray();
-        for (int value : pos) {
-            p.add(value);
-        }
-        out.add("pos", p);
-
-        Block block = loadedBlock(player, pos);
-        if (block == null) {
-            out.addProperty("status", "unloaded");
-            return out;
-        }
-        LockManager locks = plugin.locks();
-        // Aus der Ferne gibt es nur Infos zu Truhen, die man selbst öffnen darf. Alles andere nur für die
-        // Truhe, die man gerade anschaut – sonst könnte ein umgebauter Mod die Umgebung nach Besitzern abfragen.
-        boolean looking = plugin.chestService().inReach(player, block);
-        ContainerLock lock = locks.isLockable(block) ? locks.getLock(block) : null;
-        if (!looking && (lock == null || !locks.canOpen(player, block))) {
-            out.addProperty("status", "unloaded");
-            return out;
-        }
-        if (!locks.isLockable(block)) {
-            out.addProperty("status", "none");
-            return out;
-        }
-        if (lock == null) {
-            out.addProperty("status", "unlocked");
-            out.addProperty("claimable", looking);
-            return out;
-        }
-        UUID me = player.getUniqueId();
-        out.addProperty("status", "locked");
-        out.addProperty("owner", nameOf(lock.owner()));
-        out.addProperty("mine", lock.isOwner(me));
-        out.addProperty("manage", locks.canManage(player, lock));
-        out.addProperty("access", locks.canOpen(player, block));
-        out.addProperty("reason", reason(me, player, lock));
-        if (locks.canOpen(player, block)) {
-            out.add("shared", names(lock.shared()));
-            GroupStore.Group ownerGroup = plugin.groups().groupOf(lock.owner());
-            if (ownerGroup != null) {
-                out.addProperty("owner_group", ownerGroup.name());
-            }
-        }
-        return out;
-    }
-
-    private String reason(UUID me, Player player, ContainerLock lock) {
-        if (lock.isOwner(me)) {
-            return "owner";
-        }
-        if (lock.shared().contains(me)) {
-            return "shared";
-        }
-        if (plugin.groups().sameGroup(lock.owner(), me)) {
-            return "group";
-        }
-        if (plugin.trust().trusts(lock.owner(), me)) {
-            return "friend";
-        }
-        return player.hasPermission(LockManager.ADMIN_PERMISSION) ? "admin" : "none";
     }
 
     private void result(Player player, String action, Result result) {
@@ -350,8 +296,133 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         send(player, out);
     }
 
-    void send(Player player, JsonObject message) {
-        transport.accept(player, writeString(message.toString()));
+    // ------------------------------------------------------------------ Kisten-Sync
+
+    /** Sieht {@code viewer} die Container von {@code owner} in der Suche? */
+    public boolean canSee(UUID viewer, UUID owner) {
+        return viewer.equals(owner)
+                || plugin.groups().sameGroup(owner, viewer)
+                || plugin.trust().trusts(owner, viewer);
+    }
+
+    /** Schickt alles, was der Spieler sehen darf. Der Mod löscht danach gesyncte Einträge, die nicht dabei waren. */
+    public void fullSync(Player player) {
+        UUID me = player.getUniqueId();
+        if (!syncs(me)) {
+            return;
+        }
+        send(player, message("sync_begin"));
+        String head = "{\"t\":\"containers\",\"list\":[";
+        StringBuilder batch = new StringBuilder(head);
+        boolean empty = true;
+        for (ContainerSnapshot snapshot : plugin.index().all()) {
+            if (!canSee(me, snapshot.owner())) {
+                continue;
+            }
+            String entry = container(snapshot, me).toString();
+            if (!empty && batch.length() + entry.length() + 2 > MAX_CHARS) {
+                sendRaw(player, batch.append("]}").toString());
+                batch.setLength(0);
+                batch.append(head);
+                empty = true;
+            }
+            if (!empty) {
+                batch.append(',');
+            }
+            batch.append(entry);
+            empty = false;
+        }
+        if (!empty) {
+            sendRaw(player, batch.append("]}").toString());
+        }
+        send(player, message("sync_end"));
+    }
+
+    @Override
+    public void changed(@Nullable ContainerSnapshot before, @Nullable ContainerSnapshot after) {
+        for (Map.Entry<UUID, Integer> client : List.copyOf(clients.entrySet())) {
+            if (client.getValue() < 2) {
+                continue;
+            }
+            UUID viewer = client.getKey();
+            Player player = Bukkit.getPlayer(viewer);
+            if (player == null) {
+                continue;
+            }
+            if (after != null && canSee(viewer, after.owner())) {
+                JsonObject out = container(after, viewer);
+                out.addProperty("t", "container");
+                send(player, out);
+            } else if (before != null && canSee(viewer, before.owner())) {
+                send(player, gone(before));
+            }
+        }
+    }
+
+    static JsonObject container(ContainerSnapshot snapshot, UUID viewer) {
+        JsonObject out = new JsonObject();
+        out.addProperty("dim", snapshot.dimension());
+        out.add("pos", pos(snapshot.x(), snapshot.y(), snapshot.z()));
+        if (snapshot.second() != null) {
+            out.add("pos2", pos(snapshot.second().x(), snapshot.second().y(), snapshot.second().z()));
+        }
+        out.addProperty("type", snapshot.type());
+        out.addProperty("owner", nameOf(snapshot.owner()));
+        out.addProperty("mine", snapshot.owner().equals(viewer));
+        out.addProperty("at", snapshot.updatedAt());
+        JsonArray items = new JsonArray();
+        for (ContainerSnapshot.Item item : snapshot.items()) {
+            JsonObject i = new JsonObject();
+            i.addProperty("id", item.id());
+            i.addProperty("n", item.count());
+            if (item.data() != null && !item.data().isEmpty()) {
+                i.addProperty("d", item.data());
+            }
+            items.add(i);
+        }
+        out.add("items", items);
+        return out;
+    }
+
+    private static JsonObject gone(ContainerSnapshot snapshot) {
+        JsonObject out = message("container_gone");
+        out.addProperty("dim", snapshot.dimension());
+        out.add("pos", pos(snapshot.x(), snapshot.y(), snapshot.z()));
+        return out;
+    }
+
+    // ------------------------------------------------------------------ Senden
+
+    private void send(Player player, JsonObject message) {
+        sendRaw(player, message.toString());
+    }
+
+    /** Schickt die Nachricht, zu lange Nachrichten in Stücken. */
+    private void sendRaw(Player player, String json) {
+        for (String part : fragments(json, ++nextFragment)) {
+            transport.accept(player, writeString(part));
+        }
+    }
+
+    static List<String> fragments(String json, int id) {
+        if (json.length() <= MAX_CHARS) {
+            return List.of(json);
+        }
+        List<String> chunks = new ArrayList<>();
+        int start = 0;
+        while (start < json.length()) {
+            int end = Math.min(json.length(), start + MAX_CHARS);
+            if (end < json.length() && Character.isHighSurrogate(json.charAt(end - 1))) {
+                end--; // Emoji & Co. nicht zerschneiden
+            }
+            chunks.add(json.substring(start, end));
+            start = end;
+        }
+        List<String> out = new ArrayList<>(chunks.size());
+        for (int i = 0; i < chunks.size(); i++) {
+            out.add("#frag " + id + " " + i + " " + chunks.size() + "\n" + chunks.get(i));
+        }
+        return out;
     }
 
     // ------------------------------------------------------------------ Events
@@ -366,10 +437,22 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         UUID uuid = event.getPlayer().getUniqueId();
         clients.remove(uuid);
         rate.remove(uuid);
+        lastRequestedSync.remove(uuid);
         Bukkit.getScheduler().runTask(plugin, this::refreshAll);
     }
 
     // ------------------------------------------------------------------ Hilfsfunktionen
+
+    /** Ein kompletter Sync kostet viel – auf Wunsch des Clients höchstens alle paar Sekunden. */
+    private boolean mayRequestSync(UUID player) {
+        long now = System.currentTimeMillis();
+        Long last = lastRequestedSync.get(player);
+        if (last != null && now - last < SYNC_COOLDOWN_MS) {
+            return false;
+        }
+        lastRequestedSync.put(player, now);
+        return true;
+    }
 
     private boolean withinRate(Player player) {
         long second = System.currentTimeMillis() / 1000L;
@@ -381,27 +464,12 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         return ++entry[1] <= MAX_PER_SECOND;
     }
 
-    /** Block in der Welt des Spielers, nur wenn der Chunk schon geladen ist (lädt nie selbst Chunks). */
-    private @Nullable Block loadedBlock(Player player, int[] pos) {
-        World world = player.getWorld();
-        if (pos[1] < world.getMinHeight() || pos[1] >= world.getMaxHeight()
-                || !world.isChunkLoaded(pos[0] >> 4, pos[2] >> 4)) {
-            return null;
-        }
-        return world.getBlockAt(pos[0], pos[1], pos[2]);
-    }
-
-    private static @Nullable int[] pos(JsonObject in) {
-        JsonElement element = in.get("pos");
-        if (element == null || !element.isJsonArray() || element.getAsJsonArray().size() != 3) {
-            return null;
-        }
-        try {
-            JsonArray array = element.getAsJsonArray();
-            return new int[]{array.get(0).getAsInt(), array.get(1).getAsInt(), array.get(2).getAsInt()};
-        } catch (RuntimeException e) {
-            return null;
-        }
+    private static JsonArray pos(int x, int y, int z) {
+        JsonArray array = new JsonArray();
+        array.add(x);
+        array.add(y);
+        array.add(z);
+        return array;
     }
 
     private static String string(JsonObject in, String key) {
@@ -411,6 +479,15 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         }
         String value = element.getAsString().trim();
         return value.length() > 64 ? value.substring(0, 64) : value;
+    }
+
+    private static int number(JsonObject in, String key) {
+        JsonElement element = in.get(key);
+        try {
+            return element != null && element.isJsonPrimitive() ? element.getAsInt() : 0;
+        } catch (RuntimeException e) {
+            return 0;
+        }
     }
 
     private static JsonObject message(String type) {

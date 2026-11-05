@@ -1,88 +1,60 @@
 # Português (Brasil) – formato MiniMessage: https://docs.advntr.dev/minimessage/format.html
+# 2 = chest sync instead of chest locking; older files are backed up and replaced
+file-version: 2
 prefix: "<dark_gray>[<gold>Baú</gold>]</dark_gray> "
 nobody: "ninguém"
 
 no-player: "<red>Só jogadores podem usar este comando."
 no-permission: "<red>Você não tem permissão para isso."
-no-target: "<red>Olhe para um baú ou barril (máx. <distance> blocos de distância)."
+no-target: "<red>Olhe para um baú, barril ou caixa de shulker (máx. <distance> blocos)."
 unknown-player: "<red>O jogador <white><player></white> nunca entrou neste servidor."
 reloaded: "<green>Configuração recarregada."
-too-far: "<red>Olhe para o baú de perto para trancá-lo."
-chest-unavailable: "<red>Baú não encontrado – ele está perto e carregado?"
 
-usage-share: "<red>Uso: <white>/<label> share [jogador]"
-usage-unshare: "<red>Uso: <white>/<label> unshare [jogador]"
+claimed: "<green>Este baú agora é seu. <gray>O conteúdo aparece na busca do mod para você, seu grupo e seus amigos."
+info:
+  - "<dark_gray>――――――― <gold>Info do baú</gold> ―――――――"
+  - "<gold>Dono: <white><owner>"
+  - "<gold>Pilhas que o servidor conhece: <white><stacks>"
+  - "<gold>Visível para o grupo: <white><group>"
+  - "<gold>Visível para amigos: <white><friends>"
+info-other:
+  - "<dark_gray>――――――― <gold>Info do baú</gold> ―――――――"
+  - "<gold>Dono: <white><owner>"
+  - "<gold>Na sua busca: <white><visible>"
+info-none: "<gray>Este baú ainda não tem dono. <white>Quem abrir primeiro fica com ele.</white>"
+info-none-no-claim: "<gray>Este baú não tem dono. Só baús colocados a partir de agora recebem um."
+word-yes: "sim"
+word-no: "não"
+
 usage-trust: "<red>Uso: <white>/<label> trust [jogador]"
 usage-untrust: "<red>Uso: <white>/<label> untrust [jogador]"
 usage-group-create: "<red>Uso: <white>/<label> create [nome]"
 usage-group-invite: "<red>Uso: <white>/<label> invite [jogador]"
 usage-group-kick: "<red>Uso: <white>/<label> kick [jogador]"
 
-# Proteção
-denied: "<red>Este baú pertence a <white><owner></white>. Você não tem acesso."
-denied-break: "<red>Só <white><owner></white> pode quebrar este baú."
-denied-extend: "<red>O baú ao lado pertence a <white><owner></white>. Agache ao colocar para não formar um baú duplo."
-auto-locked: "<green>Baú trancado. <gray>Compartilhar: <white>/ncs share [jogador]"
-extended: "<green>Baú duplo trancado – compartilhamentos mantidos."
-admin-access: "<gold>Acesso de admin: baú de <white><owner>"
-break-unlocked: "<gray>Baú quebrado – proteção removida."
-
-# trancar / destrancar
-locked: "<green>Baú trancado. Só você tem acesso."
-already-locked: "<yellow>Este baú já é seu."
-locked-by-other: "<red>Este baú já pertence a <white><owner></white>."
-not-locked: "<yellow>Este baú não está trancado."
-not-owner: "<red>Só o dono <white><owner></white> pode fazer isso."
-unlocked: "<green>Proteção removida. Qualquer um pode abrir o baú agora."
-
-# compartilhar
-shared: "<green>Baú compartilhado com <white><player></white>."
-shared-notify: "<white><owner></white> <green>compartilhou um baú com você <gray>(<x>, <y>, <z>)</gray>."
-already-shared: "<yellow><white><player></white> já tem acesso a este baú."
-share-self: "<yellow>O dono sempre tem acesso."
-unshared: "<green><white><player></white> não tem mais acesso a este baú."
-not-shared: "<yellow>Este baú não está compartilhado com <white><player></white>."
-
-# info
-info-unlocked: "<gray>Este baú <white>não está trancado</white>. <gray>Trancar: <white>/ncs lock"
-info:
-  - "<dark_gray>――――――― <gold>Info do baú</gold> ―――――――"
-  - "<gold>Dono: <white><owner>"
-  - "<gold>Compartilhado com: <white><shared>"
-  - "<gold>Amigos do dono: <white><friends>"
-  - "<gold>Grupo do dono: <white><group>"
-info-member:
-  - "<dark_gray>――――――― <gold>Info do baú</gold> ―――――――"
-  - "<gold>Dono: <white><owner>"
-  - "<gold>Compartilhado com: <white><shared>"
-  - "<gold>Grupo do dono: <white><group>"
-
 # amigos
-trusted: "<green><white><player></white> agora pode abrir <white>todos</white> os seus baús."
-trusted-notify: "<white><owner></white> <green>confia em você: você pode abrir todos os baús de <white><owner></white>."
+trusted: "<green><white><player></white> agora vê <white>todos</white> os seus baús na busca do mod."
+trusted-notify: "<white><owner></white> <green>adicionou você como amigo: você vê todos os baús de <white><owner></white> na busca do mod."
 already-trusted: "<yellow><white><player></white> já é seu amigo."
 trust-self: "<yellow>Você não precisa confiar em si mesmo. ;)"
-untrusted: "<green><white><player></white> não pode mais abrir seus baús."
+untrusted: "<green><white><player></white> não vê mais os seus baús."
 not-trusted: "<yellow><white><player></white> não está na sua lista de amigos."
-trust-list: "<gold>Amigos (acesso a todos os baús): <white><list>"
+trust-list: "<gold>Amigos (veem todos os seus baús): <white><list>"
 
 help:
   - "<dark_gray>――――― <gold>Noobs-Container-Searcher</gold> ―――――"
-  - "<gray>Olhe para um baú e use:"
-  - "<white>/<label> share [jogador]</white> <gray>– compartilhar o baú"
-  - "<white>/<label> unshare [jogador]</white> <gray>– remover o acesso"
-  - "<white>/<label> info</white> <gray>– ver dono e compartilhamentos"
-  - "<white>/<label> lock</white> <gray>/ <white>unlock</white> <gray>– proteção ligada/desligada"
-  - "<gray>Para todos os seus baús:"
-  - "<white>/<label> trust [jogador]</white> <gray>– adicionar amigo"
+  - "<gray>O servidor guarda o que há nos seus baús e envia para a busca do mod –"
+  - "<gray>para você, seu grupo e seus amigos. Não é preciso abrir os baús."
+  - "<white>/<label> info</white> <gray>– dono do baú que você está olhando"
+  - "<white>/<label> trust [jogador]</white> <gray>– amigo vê todos os seus baús"
   - "<white>/<label> untrust [jogador]</white> <gray>– remover amigo"
   - "<white>/<label> friends</white> <gray>– lista de amigos"
-  - "<gray>Para o grupo todo: <white>/group help"
+  - "<gray>Para o grupo inteiro: <white>/group help"
 
 # grupo
 group-help:
   - "<dark_gray>――――――― <gold>Grupo</gold> ―――――――"
-  - "<gray>Num grupo todos podem abrir <white>todos</white> os baús de todos os membros."
+  - "<gray>Em um grupo, todos veem <white>todos</white> os baús de todos os membros na busca do mod."
   - "<white>/<label> create [nome]</white> <gray>– criar um grupo"
   - "<white>/<label> invite [jogador]</white> <gray>– convidar um jogador (só o líder)"
   - "<white>/<label> accept</white> <gray>/ <white>decline</white> <gray>– responder a um convite"
@@ -94,7 +66,7 @@ group-info:
   - "<dark_gray>――――――― <gold>Grupo <group></gold> ―――――――"
   - "<gold>Líder: <white><leader>"
   - "<gold>Membros (<count>): <members>"
-  - "<gray>Todos os membros podem abrir todos os baús do grupo."
+  - "<gray>Todos os membros veem todos os baús do grupo na busca do mod."
 group-none: "<yellow>Você não está em nenhum grupo. <gray>Criar: <white>/group create [nome]"
 group-already-member: "<yellow>Você já está no grupo <white><group></white>. Use <white>/group leave</white> antes."
 group-invalid-name: "<red>Nome: 3–16 caracteres, só letras, números, _ e -."
@@ -107,10 +79,10 @@ group-target-in-other: "<red><white><player></white> já está em outro grupo."
 group-invited: "<green>Convite enviado para <white><player></white>."
 group-invite-received:
   - "<gold><white><player></white> convidou você para o grupo <white><group></white>!"
-  - "<gray>Vocês vão compartilhar <white>todos</white> os baús. Válido por <minutes> min."
+  - "<gray>Vocês vão ver os baús uns dos outros na busca. Válido por <minutes> min."
   - "<click:run_command:'/ncsgroup accept'><green><bold>[ACEITAR]</bold></green></click>  <click:run_command:'/ncsgroup decline'><red>[recusar]</red></click>"
 group-no-invite: "<yellow>Você não tem nenhum convite (válido)."
-group-joined: "<green>Bem-vindo ao grupo <white><group></white>! Agora vocês compartilham todos os baús."
+group-joined: "<green>Bem-vindo ao grupo <white><group></white>! Agora vocês veem os baús uns dos outros na busca."
 group-member-joined: "<green><white><player></white> entrou no grupo."
 group-declined: "<gray>Convite para <white><group></white> recusado."
 group-invite-declined: "<yellow><white><player></white> recusou o convite."

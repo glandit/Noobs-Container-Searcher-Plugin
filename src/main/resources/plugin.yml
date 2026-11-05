@@ -2,26 +2,26 @@ name: Noobs-Container-Searcher
 version: '${version}'
 main: de.noobs.containersearcher.NoobsContainerSearcher
 api-version: '1.21'
-description: Lock chests and share them with players, friends and groups.
+description: Syncs chest contents into the search of the client mod Noob's Container Searcher – for you, your group and your friends.
 
 commands:
   truhe:
-    description: Lock chests and share them with players
+    description: Chest owner info and friends who see all your chests
     usage: /ncs help
     aliases: [ncs, kiste]
     permission: ncs.use
   gruppe:
-    description: Group – all members share all chests
+    description: Group – all members see all chests of the group in the search
     usage: /group help
     aliases: [group, ncsgroup]
     permission: ncs.use
 
 permissions:
   ncs.use:
-    description: Lock and share your own chests
+    description: Use /ncs and /group
     default: true
   ncs.admin:
-    description: Open, break and manage every chest; /ncs reload
+    description: See full info of every chest; /ncs reload
     default: op
     children:
       ncs.use: true

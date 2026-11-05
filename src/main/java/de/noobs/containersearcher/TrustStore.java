@@ -72,6 +72,17 @@ public final class TrustStore {
         return Collections.unmodifiableSet(trusted.getOrDefault(owner, Set.of()));
     }
 
+    /** Alle, die {@code player} als Freund eingetragen haben. */
+    public java.util.List<UUID> ownersTrusting(UUID player) {
+        java.util.List<UUID> owners = new java.util.ArrayList<>();
+        trusted.forEach((owner, friends) -> {
+            if (friends.contains(player)) {
+                owners.add(owner);
+            }
+        });
+        return owners;
+    }
+
     /** @return false, wenn der Spieler schon Freund war */
     public boolean add(UUID owner, UUID player) {
         boolean added = trusted.computeIfAbsent(owner, k -> new LinkedHashSet<>()).add(player);

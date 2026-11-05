@@ -1,81 +1,53 @@
 # English – fallback for every language without its own file.
 # MiniMessage format: https://docs.advntr.dev/minimessage/format.html
+# 2 = chest sync instead of chest locking; older files are backed up and replaced
+file-version: 2
 prefix: "<dark_gray>[<gold>Chest</gold>]</dark_gray> "
 nobody: "nobody"
 
 no-player: "<red>Only players can use this command."
 no-permission: "<red>You don't have permission to do that."
-no-target: "<red>Look at a chest or barrel (max. <distance> blocks away)."
+no-target: "<red>Look at a chest, barrel or shulker box (max. <distance> blocks away)."
 unknown-player: "<red>Player <white><player></white> has never been on this server."
 reloaded: "<green>Configuration reloaded."
-too-far: "<red>Look at the chest from up close to lock it."
-chest-unavailable: "<red>Chest not found – is it nearby and loaded?"
 
-usage-share: "<red>Usage: <white>/<label> share [player]"
-usage-unshare: "<red>Usage: <white>/<label> unshare [player]"
+claimed: "<green>This chest is yours now. <gray>Its contents show up in the mod search for you, your group and your friends."
+info:
+  - "<dark_gray>――――――― <gold>Chest info</gold> ―――――――"
+  - "<gold>Owner: <white><owner>"
+  - "<gold>Stacks the server knows: <white><stacks>"
+  - "<gold>Also shown to group: <white><group>"
+  - "<gold>Also shown to friends: <white><friends>"
+info-other:
+  - "<dark_gray>――――――― <gold>Chest info</gold> ―――――――"
+  - "<gold>Owner: <white><owner>"
+  - "<gold>In your search: <white><visible>"
+info-none: "<gray>This chest has no owner yet. <white>Whoever opens it first owns it.</white>"
+info-none-no-claim: "<gray>This chest has no owner. Only chests placed from now on get one."
+word-yes: "yes"
+word-no: "no"
+
 usage-trust: "<red>Usage: <white>/<label> trust [player]"
 usage-untrust: "<red>Usage: <white>/<label> untrust [player]"
 usage-group-create: "<red>Usage: <white>/<label> create [name]"
 usage-group-invite: "<red>Usage: <white>/<label> invite [player]"
 usage-group-kick: "<red>Usage: <white>/<label> kick [player]"
 
-# Protection
-denied: "<red>This chest belongs to <white><owner></white>. You have no access."
-denied-break: "<red>Only <white><owner></white> may break this chest."
-denied-extend: "<red>The chest next to it belongs to <white><owner></white>. Sneak while placing to avoid a double chest."
-auto-locked: "<green>Chest locked. <gray>Share: <white>/ncs share [player]"
-extended: "<green>Double chest locked – shares carried over."
-admin-access: "<gold>Admin access: chest of <white><owner>"
-break-unlocked: "<gray>Chest broken – lock removed."
-
-# lock / unlock
-locked: "<green>Chest locked. Only you have access."
-already-locked: "<yellow>This chest is already yours."
-locked-by-other: "<red>This chest already belongs to <white><owner></white>."
-not-locked: "<yellow>This chest is not locked."
-not-owner: "<red>Only the owner <white><owner></white> can do that."
-unlocked: "<green>Lock removed. Anyone can open the chest now."
-
-# share / unshare
-shared: "<green>Chest shared with <white><player></white>."
-shared-notify: "<white><owner></white> <green>shared a chest with you <gray>(<x>, <y>, <z>)</gray>."
-already-shared: "<yellow><white><player></white> already has access to this chest."
-share-self: "<yellow>The owner always has access."
-unshared: "<green><white><player></white> no longer has access to this chest."
-not-shared: "<yellow>This chest is not shared with <white><player></white>."
-
-# info
-info-unlocked: "<gray>This chest is <white>not locked</white>. <gray>Lock it: <white>/ncs lock"
-info:
-  - "<dark_gray>――――――― <gold>Chest info</gold> ―――――――"
-  - "<gold>Owner: <white><owner>"
-  - "<gold>Shared with: <white><shared>"
-  - "<gold>Owner's friends: <white><friends>"
-  - "<gold>Owner's group: <white><group>"
-info-member:
-  - "<dark_gray>――――――― <gold>Chest info</gold> ―――――――"
-  - "<gold>Owner: <white><owner>"
-  - "<gold>Shared with: <white><shared>"
-  - "<gold>Owner's group: <white><group>"
-
 # trust / untrust / friends
-trusted: "<green><white><player></white> can now open <white>all</white> of your chests."
-trusted-notify: "<white><owner></white> <green>trusts you: you can open all chests of <white><owner></white>."
+trusted: "<green><white><player></white> now sees <white>all</white> of your chests in the mod search."
+trusted-notify: "<white><owner></white> <green>added you as a friend: you see all chests of <white><owner></white> in the mod search."
 already-trusted: "<yellow><white><player></white> is already your friend."
 trust-self: "<yellow>You don't need to trust yourself. ;)"
-untrusted: "<green><white><player></white> can no longer open your chests."
+untrusted: "<green><white><player></white> no longer sees your chests."
 not-trusted: "<yellow><white><player></white> is not on your friends list."
-trust-list: "<gold>Friends (access to all chests): <white><list>"
+trust-list: "<gold>Friends (see all your chests): <white><list>"
 
 help:
   - "<dark_gray>――――― <gold>Noobs-Container-Searcher</gold> ―――――"
-  - "<gray>Look at a chest and use:"
-  - "<white>/<label> share [player]</white> <gray>– share the chest"
-  - "<white>/<label> unshare [player]</white> <gray>– take access away"
-  - "<white>/<label> info</white> <gray>– show owner & shares"
-  - "<white>/<label> lock</white> <gray>/ <white>unlock</white> <gray>– protection on/off"
-  - "<gray>For all of your chests:"
-  - "<white>/<label> trust [player]</white> <gray>– add a friend"
+  - "<gray>The server remembers what is in your chests and sends it to the mod search –"
+  - "<gray>for you, your group and your friends. No need to open the chests."
+  - "<white>/<label> info</white> <gray>– owner of the chest you look at"
+  - "<white>/<label> trust [player]</white> <gray>– friend sees all your chests"
   - "<white>/<label> untrust [player]</white> <gray>– remove a friend"
   - "<white>/<label> friends</white> <gray>– friends list"
   - "<gray>For your whole group: <white>/group help"
@@ -83,7 +55,7 @@ help:
 # group
 group-help:
   - "<dark_gray>――――――― <gold>Group</gold> ―――――――"
-  - "<gray>In a group everyone can open <white>all</white> chests of all members."
+  - "<gray>In a group everyone sees <white>all</white> chests of all members in the mod search."
   - "<white>/<label> create [name]</white> <gray>– start a new group"
   - "<white>/<label> invite [player]</white> <gray>– invite a player (leader only)"
   - "<white>/<label> accept</white> <gray>/ <white>decline</white> <gray>– answer an invitation"
@@ -95,7 +67,7 @@ group-info:
   - "<dark_gray>――――――― <gold>Group <group></gold> ―――――――"
   - "<gold>Leader: <white><leader>"
   - "<gold>Members (<count>): <members>"
-  - "<gray>All members can open all chests of the group."
+  - "<gray>All members see all chests of the group in the mod search."
 group-none: "<yellow>You are not in a group. <gray>Start one: <white>/group create [name]"
 group-already-member: "<yellow>You are already in the group <white><group></white>. Use <white>/group leave</white> first."
 group-invalid-name: "<red>Name: 3–16 characters, only letters, numbers, _ and -."
@@ -108,10 +80,10 @@ group-target-in-other: "<red><white><player></white> is already in another group
 group-invited: "<green>Invitation sent to <white><player></white>."
 group-invite-received:
   - "<gold><white><player></white> invites you to the group <white><group></white>!"
-  - "<gray>You will share <white>all</white> chests. Valid for <minutes> min."
+  - "<gray>You will see each other's chests in the search. Valid for <minutes> min."
   - "<click:run_command:'/ncsgroup accept'><green><bold>[ACCEPT]</bold></green></click>  <click:run_command:'/ncsgroup decline'><red>[decline]</red></click>"
 group-no-invite: "<yellow>You have no (valid) invitation."
-group-joined: "<green>Welcome to the group <white><group></white>! You now share all chests."
+group-joined: "<green>Welcome to the group <white><group></white>! You now see each other's chests in the search."
 group-member-joined: "<green><white><player></white> joined the group."
 group-declined: "<gray>Invitation to <white><group></white> declined."
 group-invite-declined: "<yellow><white><player></white> declined the invitation."

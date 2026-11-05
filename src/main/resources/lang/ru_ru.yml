@@ -1,80 +1,52 @@
 # Русский – формат MiniMessage: https://docs.advntr.dev/minimessage/format.html
+# 2 = chest sync instead of chest locking; older files are backed up and replaced
+file-version: 2
 prefix: "<dark_gray>[<gold>Сундук</gold>]</dark_gray> "
 nobody: "никто"
 
 no-player: "<red>Эту команду могут использовать только игроки."
 no-permission: "<red>У вас нет на это прав."
-no-target: "<red>Посмотрите на сундук или бочку (не дальше <distance> блоков)."
+no-target: "<red>Посмотрите на сундук, бочку или шалкер (макс. <distance> блоков)."
 unknown-player: "<red>Игрок <white><player></white> ни разу не заходил на сервер."
 reloaded: "<green>Конфигурация перезагружена."
-too-far: "<red>Посмотрите на сундук вблизи, чтобы запереть его."
-chest-unavailable: "<red>Сундук не найден – он рядом и загружен?"
 
-usage-share: "<red>Использование: <white>/<label> share [игрок]"
-usage-unshare: "<red>Использование: <white>/<label> unshare [игрок]"
+claimed: "<green>Этот сундук теперь ваш. <gray>Его содержимое видно в поиске мода вам, вашей группе и друзьям."
+info:
+  - "<dark_gray>――――――― <gold>Информация о сундуке</gold> ―――――――"
+  - "<gold>Владелец: <white><owner>"
+  - "<gold>Стаков известно серверу: <white><stacks>"
+  - "<gold>Видно группе: <white><group>"
+  - "<gold>Видно друзьям: <white><friends>"
+info-other:
+  - "<dark_gray>――――――― <gold>Информация о сундуке</gold> ―――――――"
+  - "<gold>Владелец: <white><owner>"
+  - "<gold>В вашем поиске: <white><visible>"
+info-none: "<gray>У этого сундука ещё нет владельца. <white>Кто первым откроет, тому он и принадлежит.</white>"
+info-none-no-claim: "<gray>У этого сундука нет владельца. Владельца получают только сундуки, поставленные с этого момента."
+word-yes: "да"
+word-no: "нет"
+
 usage-trust: "<red>Использование: <white>/<label> trust [игрок]"
 usage-untrust: "<red>Использование: <white>/<label> untrust [игрок]"
 usage-group-create: "<red>Использование: <white>/<label> create [название]"
 usage-group-invite: "<red>Использование: <white>/<label> invite [игрок]"
 usage-group-kick: "<red>Использование: <white>/<label> kick [игрок]"
 
-# Защита
-denied: "<red>Этот сундук принадлежит <white><owner></white>. У вас нет доступа."
-denied-break: "<red>Только <white><owner></white> может сломать этот сундук."
-denied-extend: "<red>Соседний сундук принадлежит <white><owner></white>. Присядьте при установке, чтобы не создать двойной сундук."
-auto-locked: "<green>Сундук заперт. <gray>Поделиться: <white>/ncs share [игрок]"
-extended: "<green>Двойной сундук заперт – доступы сохранены."
-admin-access: "<gold>Доступ администратора: сундук игрока <white><owner>"
-break-unlocked: "<gray>Сундук сломан – защита снята."
-
-# запереть / отпереть
-locked: "<green>Сундук заперт. Доступ есть только у вас."
-already-locked: "<yellow>Этот сундук уже ваш."
-locked-by-other: "<red>Этот сундук уже принадлежит <white><owner></white>."
-not-locked: "<yellow>Этот сундук не заперт."
-not-owner: "<red>Это может сделать только владелец <white><owner></white>."
-unlocked: "<green>Защита снята. Теперь сундук может открыть любой."
-
-# поделиться
-shared: "<green>Доступ к сундуку выдан игроку <white><player></white>."
-shared-notify: "<white><owner></white> <green>поделился с вами сундуком <gray>(<x>, <y>, <z>)</gray>."
-already-shared: "<yellow>У <white><player></white> уже есть доступ к этому сундуку."
-share-self: "<yellow>У владельца доступ есть всегда."
-unshared: "<green>У <white><player></white> больше нет доступа к этому сундуку."
-not-shared: "<yellow>Этот сундук не открыт для <white><player></white>."
-
-# информация
-info-unlocked: "<gray>Этот сундук <white>не заперт</white>. <gray>Запереть: <white>/ncs lock"
-info:
-  - "<dark_gray>――――――― <gold>Сундук</gold> ―――――――"
-  - "<gold>Владелец: <white><owner>"
-  - "<gold>Доступ есть у: <white><shared>"
-  - "<gold>Друзья владельца: <white><friends>"
-  - "<gold>Группа владельца: <white><group>"
-info-member:
-  - "<dark_gray>――――――― <gold>Сундук</gold> ―――――――"
-  - "<gold>Владелец: <white><owner>"
-  - "<gold>Доступ есть у: <white><shared>"
-  - "<gold>Группа владельца: <white><group>"
-
 # друзья
-trusted: "<green><white><player></white> теперь может открывать <white>все</white> ваши сундуки."
-trusted-notify: "<white><owner></white> <green>доверяет вам: вы можете открывать все сундуки игрока <white><owner></white>."
+trusted: "<green><white><player></white> теперь видит <white>все</white> ваши сундуки в поиске мода."
+trusted-notify: "<white><owner></white> <green>добавил вас в друзья: вы видите все сундуки <white><owner></white> в поиске мода."
 already-trusted: "<yellow><white><player></white> уже ваш друг."
 trust-self: "<yellow>Себе доверять не нужно. ;)"
-untrusted: "<green><white><player></white> больше не может открывать ваши сундуки."
+untrusted: "<green><white><player></white> больше не видит ваши сундуки."
 not-trusted: "<yellow><white><player></white> нет в вашем списке друзей."
-trust-list: "<gold>Друзья (доступ ко всем сундукам): <white><list>"
+trust-list: "<gold>Друзья (видят все ваши сундуки): <white><list>"
 
 help:
   - "<dark_gray>――――― <gold>Noobs-Container-Searcher</gold> ―――――"
-  - "<gray>Посмотрите на сундук и используйте:"
-  - "<white>/<label> share [игрок]</white> <gray>– поделиться сундуком"
-  - "<white>/<label> unshare [игрок]</white> <gray>– забрать доступ"
-  - "<white>/<label> info</white> <gray>– владелец и доступы"
-  - "<white>/<label> lock</white> <gray>/ <white>unlock</white> <gray>– включить/выключить защиту"
-  - "<gray>Для всех ваших сундуков:"
-  - "<white>/<label> trust [игрок]</white> <gray>– добавить друга"
+  - "<gray>Сервер запоминает, что лежит в ваших сундуках, и отправляет это в поиск мода –"
+  - "<gray>вам, вашей группе и друзьям. Открывать сундуки не нужно."
+  - "<white>/<label> info</white> <gray>– владелец сундука, на который вы смотрите"
+  - "<white>/<label> trust [игрок]</white> <gray>– друг видит все ваши сундуки"
   - "<white>/<label> untrust [игрок]</white> <gray>– удалить друга"
   - "<white>/<label> friends</white> <gray>– список друзей"
   - "<gray>Для всей группы: <white>/group help"
@@ -82,7 +54,7 @@ help:
 # группа
 group-help:
   - "<dark_gray>――――――― <gold>Группа</gold> ―――――――"
-  - "<gray>В группе каждый может открывать <white>все</white> сундуки всех участников."
+  - "<gray>В группе каждый видит <white>все</white> сундуки всех участников в поиске мода."
   - "<white>/<label> create [название]</white> <gray>– создать группу"
   - "<white>/<label> invite [игрок]</white> <gray>– пригласить игрока (только лидер)"
   - "<white>/<label> accept</white> <gray>/ <white>decline</white> <gray>– ответить на приглашение"
@@ -94,7 +66,7 @@ group-info:
   - "<dark_gray>――――――― <gold>Группа <group></gold> ―――――――"
   - "<gold>Лидер: <white><leader>"
   - "<gold>Участники (<count>): <members>"
-  - "<gray>Все участники могут открывать все сундуки группы."
+  - "<gray>Все участники видят все сундуки группы в поиске мода."
 group-none: "<yellow>Вы не состоите в группе. <gray>Создать: <white>/group create [название]"
 group-already-member: "<yellow>Вы уже в группе <white><group></white>. Сначала <white>/group leave</white>."
 group-invalid-name: "<red>Название: 3–16 символов, только буквы, цифры, _ и -."
@@ -107,10 +79,10 @@ group-target-in-other: "<red><white><player></white> уже состоит в д
 group-invited: "<green>Приглашение отправлено игроку <white><player></white>."
 group-invite-received:
   - "<gold><white><player></white> приглашает вас в группу <white><group></white>!"
-  - "<gray>Вы будете делить <white>все</white> сундуки. Действует <minutes> мин."
+  - "<gray>Вы будете видеть сундуки друг друга в поиске. Действует <minutes> мин."
   - "<click:run_command:'/ncsgroup accept'><green><bold>[ПРИНЯТЬ]</bold></green></click>  <click:run_command:'/ncsgroup decline'><red>[отклонить]</red></click>"
 group-no-invite: "<yellow>У вас нет (действующего) приглашения."
-group-joined: "<green>Добро пожаловать в группу <white><group></white>! Теперь вы делите все сундуки."
+group-joined: "<green>Добро пожаловать в группу <white><group></white>! Теперь вы видите сундуки друг друга в поиске."
 group-member-joined: "<green><white><player></white> вступил в группу."
 group-declined: "<gray>Приглашение в <white><group></white> отклонено."
 group-invite-declined: "<yellow><white><player></white> отклонил приглашение."

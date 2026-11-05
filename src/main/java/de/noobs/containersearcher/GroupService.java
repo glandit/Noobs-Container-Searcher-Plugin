@@ -86,7 +86,7 @@ public final class GroupService {
         }
         notifyMembers(group, "group-member-joined", placeholder("player", player.getName()));
         groups.join(group, player.getUniqueId());
-        plugin.sync().refresh(group.members());
+        plugin.sync().resync(group.members());
         return Result.ok("group-joined", placeholder("group", group.name()));
     }
 
@@ -119,7 +119,7 @@ public final class GroupService {
         }
         List<UUID> affected = new ArrayList<>(group.members());
         affected.add(player.getUniqueId());
-        plugin.sync().refresh(affected);
+        plugin.sync().resync(affected);
         return Result.ok("group-left", placeholder("group", group.name()));
     }
 
@@ -129,7 +129,7 @@ public final class GroupService {
         if (notLeader != null) {
             return notLeader;
         }
-        UUID target = ChestService.findByName(group.members(), targetName);
+        UUID target = Players.findByName(group.members(), targetName);
         if (target == null) {
             return Result.fail("group-not-member", placeholder("player", targetName));
         }
@@ -145,7 +145,7 @@ public final class GroupService {
         notifyMembers(group, "group-member-kicked", placeholder("player", name), player.getUniqueId());
         List<UUID> affected = new ArrayList<>(group.members());
         affected.add(target);
-        plugin.sync().refresh(affected);
+        plugin.sync().resync(affected);
         return Result.ok("group-member-kicked", placeholder("player", name));
     }
 
@@ -158,14 +158,14 @@ public final class GroupService {
         List<UUID> members = List.copyOf(group.members());
         notifyMembers(group, "group-disbanded", placeholder("group", group.name()), player.getUniqueId());
         groups.disband(group);
-        plugin.sync().refresh(members);
+        plugin.sync().resync(members);
         return Result.ok("group-disbanded", placeholder("group", group.name()));
     }
 
-    // ------------------------------------------------------------------ Freunde (alle eigenen Truhen)
+    // ------------------------------------------------------------------ Freunde (sehen alle eigenen Kisten in der Suche)
 
     public Result trust(Player player, String targetName) {
-        OfflinePlayer target = ChestService.resolve(targetName);
+        OfflinePlayer target = Players.resolve(targetName);
         if (target == null) {
             return Result.fail("unknown-player", placeholder("player", targetName));
         }
@@ -180,16 +180,16 @@ public final class GroupService {
         if (online != null) {
             messages.send(online, "trusted-notify", placeholder("owner", player.getName()));
         }
-        plugin.sync().refresh(List.of(player.getUniqueId()));
+        plugin.sync().resync(List.of(player.getUniqueId(), target.getUniqueId()));
         return Result.ok("trusted", placeholder("player", name));
     }
 
     public Result untrust(Player player, String targetName) {
-        UUID target = ChestService.findByName(trust.friendsOf(player.getUniqueId()), targetName);
+        UUID target = Players.findByName(trust.friendsOf(player.getUniqueId()), targetName);
         if (target == null || !trust.remove(player.getUniqueId(), target)) {
             return Result.fail("not-trusted", placeholder("player", targetName));
         }
-        plugin.sync().refresh(List.of(player.getUniqueId()));
+        plugin.sync().resync(List.of(player.getUniqueId(), target));
         return Result.ok("untrusted", placeholder("player", nameOf(target)));
     }
 

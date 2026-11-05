@@ -1,7 +1,13 @@
 # ============================================================
-#  Noobs-Container-Searcher – lock & share chests
-#  (Truhen sichern & teilen)
+#  Noobs-Container-Searcher – chest contents for the mod search
+#  (Truheninhalte für die Mod-Suche)
 # ============================================================
+# The server remembers what is in every chest that has an owner and sends it to the
+# client mod "Noob's Container Searcher": to the owner, the owner's group and friends.
+# Nothing is protected – everyone can open and break every chest, like in vanilla.
+#
+# Der Server merkt sich, was in jeder Truhe mit Besitzer liegt, und schickt es an den
+# Client-Mod: an den Besitzer, seine Gruppe und seine Freunde. Geschützt wird nichts.
 
 # Language of all messages / Sprache aller Nachrichten:
 #   auto  = each player gets their own game language (fallback: English)
@@ -11,40 +17,26 @@
 # A new file there (e.g. fr_fr.yml) adds a language.
 language: auto
 
-# Neue Truhen beim Platzieren automatisch für den Spieler sichern.
-# false = Spieler sichern selbst mit /truhe sperren
-auto-lock: true
-
-# Welche Blöcke geschützt werden können (Material-Namen).
-lockable-blocks:
+# Which blocks get an owner and are synced (material names).
+# SHULKER_BOXES = all 17 shulker boxes.
+# Welche Blöcke einen Besitzer bekommen und gesynct werden.
+tracked-blocks:
   - CHEST
   - TRAPPED_CHEST
   - BARREL
+  - SHULKER_BOXES
 
-# Gesicherte Truhen überstehen Creeper, TNT, Wither usw.
-protect-from-explosions: true
+# A new chest belongs to the player who places it. Chests from before the plugin was
+# installed (and loot chests) belong to the first player who opens them.
+# false = only placed chests get an owner.
+# Neue Truhen gehören dem, der sie platziert. Ältere Truhen gehören dem, der sie als
+# Erster öffnet. false = nur platzierte Truhen bekommen einen Besitzer.
+claim-on-first-open: true
 
-# Trichter dürfen nur aus gesicherten Truhen ziehen, wenn sie von jemandem
-# mit Zugriff gesetzt wurden. Trichterloren werden immer blockiert.
-protect-from-hoppers: true
-
-# Admins (ncs.admin) sehen eine Meldung, wenn sie eine fremde Truhe öffnen.
-notify-admin-access: true
-
-# Wie weit man eine Truhe für /truhe ... anschauen darf (Blöcke, max. 10).
+# How far away /ncs info works (blocks, max. 10).
 target-distance: 5
 
-# Gruppen (/gruppe): Alle Mitglieder haben Zugriff auf alle Truhen der anderen.
+# Groups (/group): every member sees all chests of all members in the mod search.
 groups:
-  # Dürfen Mitglieder die Truhen der anderen auch abbauen?
-  members-can-break: true
-  # Wie lange eine Einladung gültig ist (Sekunden).
+  # How long an invitation is valid (seconds).
   invite-seconds: 300
-
-# Truhen-Sync (nur mit dem Client-Mod): Wer eine Truhe öffnet, schickt ihren Inhalt an Freunde und Gruppenmitglieder,
-# die die Truhe selbst öffnen dürften. Der letzte Stand wird gemerkt und beim Beitritt nachgeschickt.
-# Freunde: einer vertraut dem anderen (/truhe vertrauen) oder beide sind in einer Gruppe.
-sync:
-  enabled: true
-  # Wie viele Truhen höchstens gemerkt werden (die ältesten fliegen zuerst raus)
-  max-entries: 5000

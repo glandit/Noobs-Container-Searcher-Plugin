@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,19 +20,17 @@ import static de.noobs.containersearcher.Messages.placeholder;
 import static java.util.Map.entry;
 
 /**
- * /truhe teilen|entziehen|info|sperren|entsperren|vertrauen|misstrauen|freunde|reload
- * (englische Aliase: share, unshare, info, lock, unlock, trust, untrust, trustlist)
+ * /truhe info|vertrauen|misstrauen|freunde|reload
+ * (englische Aliase: info, trust, untrust, friends)
  */
 public final class TruheCommand implements TabExecutor {
 
-    private enum Sub { SHARE, UNSHARE, INFO, LOCK, UNLOCK, TRUST, UNTRUST, FRIENDS, RELOAD, HELP }
+    private enum Sub { INFO, TRUST, UNTRUST, FRIENDS, RELOAD, HELP }
+
+    public static final String ADMIN_PERMISSION = "ncs.admin";
 
     private static final Map<String, Sub> ALIASES = Map.ofEntries(
-            entry("teilen", Sub.SHARE), entry("share", Sub.SHARE), entry("add", Sub.SHARE),
-            entry("entziehen", Sub.UNSHARE), entry("unshare", Sub.UNSHARE), entry("remove", Sub.UNSHARE),
             entry("info", Sub.INFO),
-            entry("sperren", Sub.LOCK), entry("lock", Sub.LOCK),
-            entry("entsperren", Sub.UNLOCK), entry("unlock", Sub.UNLOCK),
             entry("vertrauen", Sub.TRUST), entry("trust", Sub.TRUST),
             entry("misstrauen", Sub.UNTRUST), entry("untrust", Sub.UNTRUST),
             entry("freunde", Sub.FRIENDS), entry("friends", Sub.FRIENDS), entry("trustlist", Sub.FRIENDS),
@@ -42,24 +39,18 @@ public final class TruheCommand implements TabExecutor {
     );
 
     /** Was in der Tab-Vervollständigung angezeigt wird – deutsch oder englisch, je nach Spielsprache. */
-    private static final List<String> SUGGESTED_DE = List.of(
-            "teilen", "entziehen", "info", "sperren", "entsperren", "vertrauen", "misstrauen", "freunde", "hilfe");
-    private static final List<String> SUGGESTED_EN = List.of(
-            "share", "unshare", "info", "lock", "unlock", "trust", "untrust", "friends", "help");
+    private static final List<String> SUGGESTED_DE = List.of("info", "vertrauen", "misstrauen", "freunde", "hilfe");
+    private static final List<String> SUGGESTED_EN = List.of("info", "trust", "untrust", "friends", "help");
 
     private final NoobsContainerSearcher plugin;
-    private final LockManager locks;
     private final TrustStore trust;
     private final Messages messages;
-    private final ChestService chests;
     private final GroupService social;
 
     public TruheCommand(NoobsContainerSearcher plugin) {
         this.plugin = plugin;
-        this.locks = plugin.locks();
         this.trust = plugin.trust();
         this.messages = plugin.messages();
-        this.chests = plugin.chestService();
         this.social = plugin.groupService();
     }
 
@@ -73,7 +64,7 @@ public final class TruheCommand implements TabExecutor {
             return true;
         }
         if (sub == Sub.RELOAD) {
-            if (!sender.hasPermission(LockManager.ADMIN_PERMISSION)) {
+            if (!sender.hasPermission(ADMIN_PERMISSION)) {
                 messages.send(sender, "no-permission");
                 return true;
             }
@@ -99,37 +90,10 @@ public final class TruheCommand implements TabExecutor {
             }
             case FRIENDS -> messages.send(player, "trust-list",
                     placeholder("list", messages.nameList(player, trust.friendsOf(player.getUniqueId()))));
-            default -> blockCommand(player, sub, label, args);
-        }
-        return true;
-    }
-
-    // ------------------------------------------------------------------ Befehle mit Truhe
-
-    private void blockCommand(Player player, Sub sub, String label, String[] args) {
-        int distance = plugin.settings().targetDistance();
-        Block block = chests.targetBlock(player);
-        if (block == null || !locks.isLockable(block)) {
-            messages.send(player, "no-target", placeholder("distance", distance));
-            return;
-        }
-
-        switch (sub) {
-            case INFO -> info(player, block);
-            case LOCK -> chests.lock(player, block).send(messages, player);
-            case UNLOCK -> chests.unlock(player, block).send(messages, player);
-            case SHARE -> {
-                if (needsArg(player, label, args, "usage-share")) {
-                    chests.share(player, block, args[1]).send(messages, player);
-                }
-            }
-            case UNSHARE -> {
-                if (needsArg(player, label, args, "usage-unshare")) {
-                    chests.unshare(player, block, args[1]).send(messages, player);
-                }
-            }
+            case INFO -> info(player);
             default -> { }
         }
+        return true;
     }
 
     private boolean needsArg(Player player, String label, String[] args, String usageKey) {
@@ -140,24 +104,33 @@ public final class TruheCommand implements TabExecutor {
         return false;
     }
 
-    private void info(Player player, Block block) {
-        ContainerLock lock = locks.getLock(block);
-        if (lock == null) {
-            messages.send(player, "info-unlocked");
+    private void info(Player player) {
+        Block block = plugin.targetBlock(player);
+        Ownership ownership = plugin.ownership();
+        if (block == null || !ownership.isTracked(block)) {
+            messages.send(player, "no-target", placeholder("distance", plugin.settings().targetDistance()));
             return;
         }
-        // Fremde sehen nur, wem die Truhe gehört – nicht, mit wem sie geteilt ist
-        if (!locks.canOpen(player, block)) {
-            messages.send(player, "denied", placeholder("owner", nameOf(lock.owner())));
+        UUID owner = ownership.owner(block);
+        if (owner == null) {
+            messages.send(player, plugin.settings().claimOnFirstOpen() ? "info-none" : "info-none-no-claim");
             return;
         }
-        GroupStore.Group group = plugin.groups().groupOf(lock.owner());
-        // die Freundesliste des Besitzers geht nur ihn selbst (und Admins) etwas an
-        messages.send(player, locks.canManage(player, lock) ? "info" : "info-member",
-                placeholder("owner", nameOf(lock.owner())),
-                placeholder("shared", messages.nameList(player, lock.shared())),
-                placeholder("friends", messages.nameList(player, trust.friendsOf(lock.owner()))),
-                placeholder("group", group == null ? messages.raw(player, "nobody") : group.name()));
+        // Gruppe und Freunde des Besitzers gehen nur ihn selbst (und Admins) etwas an
+        if (!owner.equals(player.getUniqueId()) && !player.hasPermission(ADMIN_PERMISSION)) {
+            boolean visible = plugin.modChannel().canSee(player.getUniqueId(), owner);
+            messages.send(player, "info-other",
+                    placeholder("owner", nameOf(owner)),
+                    placeholder("visible", messages.raw(player, visible ? "word-yes" : "word-no")));
+            return;
+        }
+        GroupStore.Group group = plugin.groups().groupOf(owner);
+        ContainerSnapshot snapshot = plugin.index().get(ownership.canonical(block));
+        messages.send(player, "info",
+                placeholder("owner", nameOf(owner)),
+                placeholder("group", group == null ? messages.raw(player, "nobody") : group.name()),
+                placeholder("friends", messages.nameList(player, trust.friendsOf(owner))),
+                placeholder("stacks", snapshot == null ? 0 : snapshot.items().size()));
     }
 
     // ------------------------------------------------------------------ Tab-Vervollständigung
@@ -167,7 +140,7 @@ public final class TruheCommand implements TabExecutor {
                                                 @NotNull String label, @NotNull String[] args) {
         if (args.length == 1) {
             List<String> options = new ArrayList<>(messages.isGerman(sender) ? SUGGESTED_DE : SUGGESTED_EN);
-            if (sender.hasPermission(LockManager.ADMIN_PERMISSION)) {
+            if (sender.hasPermission(ADMIN_PERMISSION)) {
                 options.add("reload");
             }
             return filter(options, args[0]);
@@ -180,22 +153,12 @@ public final class TruheCommand implements TabExecutor {
             return List.of();
         }
         return switch (sub) {
-            case SHARE, TRUST -> filter(Bukkit.getOnlinePlayers().stream()
+            case TRUST -> filter(Bukkit.getOnlinePlayers().stream()
                     .filter(p -> !p.equals(player) && player.canSee(p))
                     .map(Player::getName).toList(), args[1]);
-            case UNSHARE -> {
-                Block block = chests.targetBlock(player);
-                ContainerLock lock = block == null || !locks.isLockable(block) ? null : locks.getLock(block);
-                // nur wer die Truhe verwalten darf, bekommt die Freigaben vorgeschlagen
-                yield lock == null || !locks.canManage(player, lock) ? List.of() : filter(names(lock.shared()), args[1]);
-            }
-            case UNTRUST -> filter(names(trust.friendsOf(player.getUniqueId())), args[1]);
+            case UNTRUST -> filter(trust.friendsOf(player.getUniqueId()).stream().map(Messages::nameOf).toList(), args[1]);
             default -> List.of();
         };
-    }
-
-    private static List<String> names(Collection<UUID> uuids) {
-        return uuids.stream().map(Messages::nameOf).toList();
     }
 
     private static List<String> filter(List<String> options, String prefix) {

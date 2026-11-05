@@ -1,40 +1,50 @@
 # Noobs-Container-Searcher – Server-Plugin
 
-PaperMC-Plugin: Truhen sichern und mit anderen Spielern, Freunden und Gruppen teilen.
-Läuft auf Paper **1.21.x und 26.x** (Java 21+, getestet auf 1.21.11 und 26.3).
+PaperMC-Plugin für den Client-Mod „Noob's Container Searcher“: Der Server merkt sich, was in deinen Truhen
+liegt, und schickt es in die Suche des Mods – **ohne dass du die Truhen öffnen musst**.
+Deine Gruppe und deine Freunde bekommen deine Truhen ebenfalls in ihre Suche.
+Läuft auf Paper **1.21.x und 26.x** (Java 21+, getestet auf 26.3).
 
-Passender Client-Mod mit Bedienung per Klick statt Befehlen:
+Passender Client-Mod:
 [glandit/Noobs-Container-Searcher, Branch `truhenschutz`](https://github.com/glandit/Noobs-Container-Searcher/tree/truhenschutz)
 (Fork von [nooobfly/Noobs-Container-Searcher](https://github.com/nooobfly/Noobs-Container-Searcher)).
-Das Plugin funktioniert auch ohne Mod – dann über Befehle.
+Ohne Mod funktionieren nur die Befehle; die Kisteninhalte sieht man nur mit Mod.
+
+**Geschützt wird nichts.** Alle können alle Truhen öffnen und abbauen, wie in Vanilla.
+Besitz und Gruppen bestimmen nur, wer welche Inhalte in seiner Suche sieht.
 
 ## Download & Installation
-- **Plugin:** [Releases](https://github.com/glandit/Noobs-Container-Searcher-Plugin/releases) →
-  `Noobs-Container-Searcher-1.1.0.jar` in den `plugins/`-Ordner legen, Server neu starten.
-- **Mod (optional, für die Spieler):** [Mod-Releases](https://github.com/glandit/Noobs-Container-Searcher/releases) →
-  Jar passend zu Minecraft-Version und Loader (Fabric oder NeoForge) in den `mods/`-Ordner.
+1. Plugin-Jar unter [Releases](https://github.com/glandit/Noobs-Container-Searcher-Plugin/releases) herunterladen.
+2. In den `plugins/`-Ordner des Servers legen und den Server neu starten.
+3. Spieler installieren den passenden Mod
+   ([Mod-Releases](https://github.com/glandit/Noobs-Container-Searcher/releases)).
 
-## So funktioniert's
-- Neue Truhe/Fass platzieren → automatisch **deine** (nur du kannst öffnen & abbauen).
-- Truhe anschauen und Befehl eingeben:
+## Welche Truhen gehören mir?
+- Neue Truhen, Fässer und Shulkerkisten gehören dem, der sie **platziert**.
+- Truhen von vor der Installation (und Loot-Truhen) gehören dem, der sie **als Erster öffnet**.
+  Abschaltbar mit `claim-on-first-open: false`.
+- Wird eine Truhe zur Doppeltruhe erweitert, behält sie ihren Besitzer.
 
+## Wer sieht was?
+| Wer | sieht in der Suche |
+|---|---|
+| Du | alle deine Truhen |
+| Deine Gruppe | alle Truhen aller Mitglieder |
+| Deine Freunde (`/ncs trust`) | alle deine Truhen – aber du nicht automatisch ihre |
+
+Der Server liest den Inhalt neu ein, sobald sich etwas ändert: Spieler legt etwas rein oder nimmt raus,
+Trichter schiebt Items, Truhe wird abgebaut oder explodiert. Die Änderung landet sofort in der Suche aller,
+die die Truhe sehen dürfen. Der Stand bleibt auch über Neustarts erhalten (`containers.json.gz`).
+Verlässt jemand die Gruppe oder wird als Freund entfernt, verschwinden die fremden Truhen aus seiner Suche.
+
+## Befehle
 | Befehl | Wirkung |
 |---|---|
-| `/truhe teilen <Spieler>` | Diese Truhe mit Spieler teilen |
-| `/truhe entziehen <Spieler>` | Zugriff wieder wegnehmen |
-| `/truhe info` | Besitzer & Freigaben anzeigen |
-| `/truhe sperren` / `entsperren` | Schutz an / aus |
-| `/truhe vertrauen <Spieler>` | Freund: Zugriff auf **alle** deine Truhen |
+| `/truhe info` | Besitzer der angeschauten Truhe |
+| `/truhe vertrauen <Spieler>` | Freund sieht alle deine Truhen |
 | `/truhe misstrauen <Spieler>` | Freund entfernen |
 | `/truhe freunde` | Freundesliste |
 | `/truhe reload` | Config neu laden (Admin) |
-
-## Gruppen – alle teilen alles
-In einer Gruppe hat **jedes Mitglied Zugriff auf alle Truhen aller anderen Mitglieder** –
-auch auf Truhen, die erst später gebaut werden.
-
-| Befehl | Wirkung |
-|---|---|
 | `/gruppe erstellen <Name>` | Gruppe gründen (du bist Anführer) |
 | `/gruppe einladen <Spieler>` | Spieler einladen (nur Anführer, Spieler muss online sein) |
 | `/gruppe annehmen` / `ablehnen` | Einladung beantworten (oder im Chat anklicken) |
@@ -43,58 +53,42 @@ auch auf Truhen, die erst später gebaut werden.
 | `/gruppe entfernen <Spieler>` | Mitglied rauswerfen (nur Anführer) |
 | `/gruppe auflösen` | Gruppe löschen (nur Anführer) |
 
-Jeder Spieler kann in einer Gruppe sein. Beitritt nur per Einladung.
-Mitglieder dürfen Gruppen-Truhen auch abbauen – abschaltbar mit `groups.members-can-break: false`.
+Aliase: `/ncs`, `/kiste` und `/group`. Englisch geht auch: `/ncs trust`, `/group invite` usw.
 
-## Truhen-Sync unter Freunden
-Mit dem Client-Mod (Branch `truhenschutz`) kennen Freunde und Gruppenmitglieder die Truhen der anderen,
-ohne sie selbst geöffnet zu haben: **Wer eine Truhe öffnet, schickt ihren Inhalt an alle Freunde, die sie öffnen dürfen.**
-- **Freunde** sind Spieler, bei denen einer dem anderen vertraut (`/truhe vertrauen`) oder die in derselben Gruppe sind.
-- Empfänger bekommen den Stand nur, wenn sie die Truhe selbst öffnen dürften (ungesichert, Besitzer, geteilt, Freund
-  des Besitzers, Gruppe des Besitzers).
-- Der Server prüft, dass der Absender die Truhe öffnen darf und in der Nähe steht, und merkt sich den letzten Stand
-  (`plugins/Noobs-Container-Searcher/sync.json`). Wer später beitritt, bekommt ihn nachgeschickt. Beim Abbau wird er gelöscht.
-- Der Inhalt wird vom Mod gepackt (JSON, gzip, base64); der Server leitet ihn nur weiter und liest ihn nicht.
-- Ein Spieler kann das im Mod abschalten (`shareWithFriends` in `config/noobs-container-searcher/settings.json`).
-- Server-Schalter: `sync.enabled` und `sync.max-entries` in der `config.yml`.
-
-## Bedienung im Mod „Noob's Container Searcher“ (statt Befehlen)
-Wer den Client-Mod hat, bekommt im Fenster (Taste `G`) einen Tab **„Gruppe“** –
-aber nur auf Servern mit diesem Plugin:
-- **Diese Truhe:** Truhe anschauen, `G` drücken → Besitzer sehen, sichern, teilen (Name eintippen
-  oder auf `+ Name` klicken), Freigabe per ✕ entziehen, Schutz entfernen.
+## Im Mod
+Im Fenster des Mods (Taste `G`) gibt es auf Servern mit diesem Plugin den Tab **„Gruppe“**:
+- **Server-Sync:** wie viele eigene und fremde Truhen der Server geschickt hat, von wem du Truhen siehst,
+  Knopf „Neu laden“.
 - **Gruppe:** gründen, einladen (`+ Name`), Einladung annehmen/ablehnen, Mitglieder (grün = online,
   ★ = Anführer), rauswerfen, verlassen, auflösen.
-- **Freunde:** Spieler, die alle deine Truhen öffnen dürfen.
+- **Freunde:** Spieler, die alle deine Truhen sehen.
+
+In den Suchergebnissen steht bei fremden Truhen, wem sie gehören (z.B. „Truhe von Anna“).
+
+![Suche: Apfel in Annas Truhe, ohne sie geöffnet zu haben](docs/search-friend-chest.png)
+
+![Tab „Gruppe“ mit Server-Sync, Gruppe und Freunden](docs/group-tab.png)
 
 Technik: Kanal `noobs_container_searcher:protect`, JSON-Nachrichten (siehe `ModChannel.java`).
-Der Server prüft jede Aktion selbst – der Mod ist nur die Oberfläche.
+Items gehen als `ItemStack#serializeAsBytes` (Base64) raus, der Mod liest sie mit dem Vanilla-Item-Codec.
+Lange Nachrichten werden in Stücke unter 64 000 Zeichen geteilt.
 
-| Truhe noch ungesichert (Englisch) | Gesichert, Gruppe, geteilt, Freund (Deutsch) |
-|---|---|
-| ![Group tab, English](docs/group-tab-en.png) | ![Gruppe-Tab, Deutsch](docs/group-tab-de.png) |
-
-Aliase: `/ncs`, `/kiste`. Englisch geht auch: `share`, `unshare`, `lock`, `unlock`, `trust`, `untrust`.
-
-## Schutz
-- Geteilte Spieler dürfen öffnen, **nicht** abbauen.
-- Doppeltruhen: beide Hälften geschützt; fremde Truhe erweitern geht nicht.
-- Explosionen & Wither zerstören gesicherte Truhen nicht.
-- Trichter ziehen nur aus gesicherten Truhen, wenn ein Spieler mit Zugriff sie gesetzt hat.
-  Trichterloren werden blockiert. (Alte Trichter von vor der Installation: einmal neu setzen.)
+## Konfiguration (`config.yml`)
+- `tracked-blocks` – welche Blöcke gesynct werden (Standard: Truhe, Redstone-Truhe, Fass, alle Shulkerkisten)
+- `claim-on-first-open` – alte Truhen gehören dem ersten, der sie öffnet (Standard: `true`)
+- `language` – `auto` (Spielsprache jedes Spielers) oder fest, z.B. `de_de`
+- `groups.invite-seconds` – wie lange eine Einladung gilt
 
 ## Sprachen
 Jeder Spieler bekommt die Texte in **seiner Spielsprache** – wie beim Mod:
 Englisch, Deutsch, Portugiesisch (BR), Russisch, Türkisch. Andere Sprachen → Englisch.
-- `config.yml` → `language: auto` (Standard) oder fest z.B. `language: de_de`
 - Texte anpassen: `plugins/Noobs-Container-Searcher/lang/<sprache>.yml`
 - Neue Sprache: einfach z.B. `fr_fr.yml` dort ablegen
-- Befehle gibt es deutsch und englisch: `/truhe teilen` = `/ncs share`, `/gruppe einladen` = `/group invite`.
-  Die Tab-Vervollständigung schlägt je nach Spielsprache deutsche oder englische Befehle vor.
+- Nach einem Update mit geänderten Texten wird die alte Datei als `<sprache>.yml.old` gesichert.
 
 ## Rechte
-- `ncs.use` – Truhen sichern & teilen (Standard: alle)
-- `ncs.admin` – alle Truhen öffnen/abbauen/verwalten (Standard: OP)
+- `ncs.use` – Befehle nutzen (Standard: alle)
+- `ncs.admin` – volle `/ncs info` bei allen Truhen, `/ncs reload` (Standard: OP)
 
 ## Selbst bauen
 ```

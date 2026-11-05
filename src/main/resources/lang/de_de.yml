@@ -1,80 +1,52 @@
 # Deutsch – MiniMessage-Format: https://docs.advntr.dev/minimessage/format.html
+# 2 = chest sync instead of chest locking; older files are backed up and replaced
+file-version: 2
 prefix: "<dark_gray>[<gold>Truhe</gold>]</dark_gray> "
 nobody: "niemand"
 
 no-player: "<red>Nur Spieler können diesen Befehl nutzen."
 no-permission: "<red>Dafür hast du keine Rechte."
-no-target: "<red>Schau eine Truhe oder ein Fass an (max. <distance> Blöcke entfernt)."
+no-target: "<red>Schau eine Truhe, ein Fass oder eine Shulkerkiste an (max. <distance> Blöcke entfernt)."
 unknown-player: "<red>Spieler <white><player></white> war noch nie auf dem Server."
 reloaded: "<green>Konfiguration neu geladen."
-too-far: "<red>Schau die Truhe aus der Nähe an, um sie zu sichern."
-chest-unavailable: "<red>Truhe nicht gefunden – ist sie in der Nähe und geladen?"
 
-usage-share: "<red>Benutzung: <white>/<label> teilen [Spieler]"
-usage-unshare: "<red>Benutzung: <white>/<label> entziehen [Spieler]"
+claimed: "<green>Diese Truhe gehört jetzt dir. <gray>Ihr Inhalt erscheint in der Mod-Suche – bei dir, deiner Gruppe und deinen Freunden."
+info:
+  - "<dark_gray>――――――― <gold>Truhen-Info</gold> ―――――――"
+  - "<gold>Besitzer: <white><owner>"
+  - "<gold>Stapel, die der Server kennt: <white><stacks>"
+  - "<gold>Sichtbar für Gruppe: <white><group>"
+  - "<gold>Sichtbar für Freunde: <white><friends>"
+info-other:
+  - "<dark_gray>――――――― <gold>Truhen-Info</gold> ―――――――"
+  - "<gold>Besitzer: <white><owner>"
+  - "<gold>In deiner Suche: <white><visible>"
+info-none: "<gray>Diese Truhe hat noch keinen Besitzer. <white>Wer sie als Erster öffnet, dem gehört sie.</white>"
+info-none-no-claim: "<gray>Diese Truhe hat keinen Besitzer. Nur ab jetzt platzierte Truhen bekommen einen."
+word-yes: "ja"
+word-no: "nein"
+
 usage-trust: "<red>Benutzung: <white>/<label> vertrauen [Spieler]"
 usage-untrust: "<red>Benutzung: <white>/<label> misstrauen [Spieler]"
 usage-group-create: "<red>Benutzung: <white>/<label> erstellen [Name]"
 usage-group-invite: "<red>Benutzung: <white>/<label> einladen [Spieler]"
 usage-group-kick: "<red>Benutzung: <white>/<label> entfernen [Spieler]"
 
-# Schutz
-denied: "<red>Diese Truhe gehört <white><owner></white>. Du hast keinen Zugriff."
-denied-break: "<red>Nur <white><owner></white> darf diese Truhe abbauen."
-denied-extend: "<red>Die Truhe daneben gehört <white><owner></white>. Schleiche beim Platzieren, um keine Doppeltruhe zu bauen."
-auto-locked: "<green>Truhe gesichert. <gray>Teilen: <white>/truhe teilen [Spieler]"
-extended: "<green>Doppeltruhe gesichert – Freigaben übernommen."
-admin-access: "<gold>Admin-Zugriff: Truhe von <white><owner>"
-break-unlocked: "<gray>Truhe abgebaut – Schutz entfernt."
-
-# sperren / entsperren
-locked: "<green>Truhe gesichert. Nur du hast Zugriff."
-already-locked: "<yellow>Diese Truhe gehört dir schon."
-locked-by-other: "<red>Diese Truhe gehört bereits <white><owner></white>."
-not-locked: "<yellow>Diese Truhe ist nicht gesichert."
-not-owner: "<red>Das darf nur der Besitzer <white><owner></white>."
-unlocked: "<green>Schutz entfernt. Jeder kann die Truhe jetzt öffnen."
-
-# teilen / entziehen
-shared: "<green>Truhe mit <white><player></white> geteilt."
-shared-notify: "<white><owner></white> <green>hat eine Truhe mit dir geteilt <gray>(<x>, <y>, <z>)</gray>."
-already-shared: "<yellow><white><player></white> hat schon Zugriff auf diese Truhe."
-share-self: "<yellow>Der Besitzer hat immer Zugriff."
-unshared: "<green><white><player></white> hat keinen Zugriff mehr auf diese Truhe."
-not-shared: "<yellow>Diese Truhe ist nicht mit <white><player></white> geteilt."
-
-# info
-info-unlocked: "<gray>Diese Truhe ist <white>nicht gesichert</white>. <gray>Sichern: <white>/truhe sperren"
-info:
-  - "<dark_gray>――――――― <gold>Truhen-Info</gold> ―――――――"
-  - "<gold>Besitzer: <white><owner>"
-  - "<gold>Geteilt mit: <white><shared>"
-  - "<gold>Freunde des Besitzers: <white><friends>"
-  - "<gold>Gruppe des Besitzers: <white><group>"
-info-member:
-  - "<dark_gray>――――――― <gold>Truhen-Info</gold> ―――――――"
-  - "<gold>Besitzer: <white><owner>"
-  - "<gold>Geteilt mit: <white><shared>"
-  - "<gold>Gruppe des Besitzers: <white><group>"
-
 # vertrauen / misstrauen / freunde
-trusted: "<green><white><player></white> hat jetzt Zugriff auf <white>alle</white> deine Truhen."
-trusted-notify: "<white><owner></white> <green>vertraut dir: Du hast Zugriff auf alle Truhen von <white><owner></white>."
+trusted: "<green><white><player></white> sieht jetzt <white>alle</white> deine Truhen in der Mod-Suche."
+trusted-notify: "<white><owner></white> <green>hat dich als Freund eingetragen: Du siehst alle Truhen von <white><owner></white> in der Mod-Suche."
 already-trusted: "<yellow><white><player></white> ist schon dein Freund."
 trust-self: "<yellow>Dir selbst musst du nicht vertrauen. ;)"
-untrusted: "<green><white><player></white> hat keinen Zugriff mehr auf deine Truhen."
+untrusted: "<green><white><player></white> sieht deine Truhen nicht mehr."
 not-trusted: "<yellow><white><player></white> ist nicht in deiner Freundesliste."
-trust-list: "<gold>Freunde (Zugriff auf alle Truhen): <white><list>"
+trust-list: "<gold>Freunde (sehen alle deine Truhen): <white><list>"
 
 help:
   - "<dark_gray>――――― <gold>Noobs-Container-Searcher</gold> ―――――"
-  - "<gray>Schau eine Truhe an und nutze:"
-  - "<white>/<label> teilen [Spieler]</white> <gray>– Truhe mit Spieler teilen"
-  - "<white>/<label> entziehen [Spieler]</white> <gray>– Zugriff wieder wegnehmen"
-  - "<white>/<label> info</white> <gray>– Besitzer & Freigaben anzeigen"
-  - "<white>/<label> sperren</white> <gray>/ <white>entsperren</white> <gray>– Schutz an/aus"
-  - "<gray>Für alle deine Truhen:"
-  - "<white>/<label> vertrauen [Spieler]</white> <gray>– Freund hinzufügen"
+  - "<gray>Der Server merkt sich, was in deinen Truhen ist, und schickt es in die Mod-Suche –"
+  - "<gray>an dich, deine Gruppe und deine Freunde. Öffnen musst du sie dafür nicht."
+  - "<white>/<label> info</white> <gray>– Besitzer der angeschauten Truhe"
+  - "<white>/<label> vertrauen [Spieler]</white> <gray>– Freund sieht alle deine Truhen"
   - "<white>/<label> misstrauen [Spieler]</white> <gray>– Freund entfernen"
   - "<white>/<label> freunde</white> <gray>– Freundesliste"
   - "<gray>Für eure ganze Gruppe: <white>/gruppe hilfe"
@@ -82,7 +54,7 @@ help:
 # gruppe
 group-help:
   - "<dark_gray>――――――― <gold>Gruppe</gold> ―――――――"
-  - "<gray>In einer Gruppe hat jeder Zugriff auf <white>alle</white> Truhen aller Mitglieder."
+  - "<gray>In einer Gruppe sieht jeder <white>alle</white> Truhen aller Mitglieder in der Mod-Suche."
   - "<white>/<label> erstellen [Name]</white> <gray>– neue Gruppe gründen"
   - "<white>/<label> einladen [Spieler]</white> <gray>– Spieler einladen (nur Anführer)"
   - "<white>/<label> annehmen</white> <gray>/ <white>ablehnen</white> <gray>– Einladung beantworten"
@@ -94,7 +66,7 @@ group-info:
   - "<dark_gray>――――――― <gold>Gruppe <group></gold> ―――――――"
   - "<gold>Anführer: <white><leader>"
   - "<gold>Mitglieder (<count>): <members>"
-  - "<gray>Alle Mitglieder können alle Truhen der Gruppe öffnen."
+  - "<gray>Alle Mitglieder sehen alle Truhen der Gruppe in der Mod-Suche."
 group-none: "<yellow>Du bist in keiner Gruppe. <gray>Gründen: <white>/gruppe erstellen [Name]"
 group-already-member: "<yellow>Du bist schon in der Gruppe <white><group></white>. Erst <white>/gruppe verlassen</white>."
 group-invalid-name: "<red>Name: 3–16 Zeichen, nur Buchstaben, Zahlen, _ und -."
@@ -107,10 +79,10 @@ group-target-in-other: "<red><white><player></white> ist schon in einer anderen 
 group-invited: "<green>Einladung an <white><player></white> geschickt."
 group-invite-received:
   - "<gold><white><player></white> lädt dich in die Gruppe <white><group></white> ein!"
-  - "<gray>Dann teilt ihr euch <white>alle</white> Truhen. Gültig für <minutes> Min."
+  - "<gray>Dann seht ihr gegenseitig eure Truhen in der Suche. Gültig für <minutes> Min."
   - "<click:run_command:'/ncsgroup accept'><green><bold>[ANNEHMEN]</bold></green></click>  <click:run_command:'/ncsgroup decline'><red>[ablehnen]</red></click>"
 group-no-invite: "<yellow>Du hast keine (gültige) Einladung."
-group-joined: "<green>Willkommen in der Gruppe <white><group></white>! Ihr teilt jetzt alle Truhen."
+group-joined: "<green>Willkommen in der Gruppe <white><group></white>! Ihr seht jetzt gegenseitig eure Truhen in der Suche."
 group-member-joined: "<green><white><player></white> ist der Gruppe beigetreten."
 group-declined: "<gray>Einladung in <white><group></white> abgelehnt."
 group-invite-declined: "<yellow><white><player></white> hat die Einladung abgelehnt."

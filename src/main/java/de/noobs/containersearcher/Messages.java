@@ -34,6 +34,8 @@ import java.util.logging.Level;
 public final class Messages {
 
     public static final String FALLBACK = "en_us";
+    /** Steigt, wenn sich Texte so ändern, dass alte Dateien auf dem Server falsch wären. */
+    private static final String FILE_VERSION = "file-version";
     /** Mitgelieferte Sprachen (dieselben wie im Mod "Noob's Container Searcher"). */
     public static final List<String> BUNDLED = List.of("en_us", "de_de", "pt_br", "ru_ru", "tr_tr");
 
@@ -52,8 +54,19 @@ public final class Messages {
                 plugin.saveResource(resource, false);
             }
             YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-            // neue Texte aus Updates greifen auch, wenn die Datei auf dem Server älter ist
             YamlConfiguration bundled = bundled(plugin, resource);
+            // Texte mit geänderter Bedeutung (z.B. Sperren → Sync): alte Datei sichern, neue anlegen
+            if (bundled != null && yaml.getInt(FILE_VERSION, 1) < bundled.getInt(FILE_VERSION, 1)) {
+                File backup = new File(folder, code + ".yml.old");
+                if (backup.delete() || !backup.exists()) {
+                    if (file.renameTo(backup)) {
+                        plugin.saveResource(resource, true);
+                        yaml = YamlConfiguration.loadConfiguration(file);
+                        plugin.getLogger().info("lang/" + code + ".yml updated, your old file is lang/" + backup.getName());
+                    }
+                }
+            }
+            // neue Texte aus Updates greifen auch, wenn die Datei auf dem Server älter ist
             if (bundled != null) {
                 yaml.setDefaults(bundled);
             }

@@ -2,9 +2,6 @@ package de.noobs.containersearcher;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
-import org.mockbukkit.mockbukkit.world.WorldMock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,16 +18,14 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Simuliert den Client-Mod: schickt JSON über den Kanal und prüft die Antworten. */
+/** Simuliert den Client-Mod: schickt JSON über den Kanal und prüft die Antworten (Gruppe, Freunde). */
 class ModChannelTest {
 
     private ServerMock server;
     private NoobsContainerSearcher plugin;
     private ModChannel channel;
-    private WorldMock world;
     private PlayerMock anna;
     private PlayerMock ben;
     private final Map<Player, List<JsonObject>> inbox = new HashMap<>();
@@ -43,17 +37,9 @@ class ModChannelTest {
         channel = plugin.modChannel();
         channel.setTransport((player, bytes) -> inbox.computeIfAbsent(player, k -> new ArrayList<>())
                 .add(JsonParser.parseString(ModChannel.readString(bytes)).getAsJsonObject()));
-        world = server.addSimpleWorld("world");
         anna = server.addPlayer("Anna");
         ben = server.addPlayer("Ben");
-        anna.teleport(new Location(world, 0.5, 64, 2.5));
-        ben.teleport(new Location(world, 40.5, 64, 40.5));
-        world.loadChunk(0, 0); // auf dem echten Server: Spieler in der Nähe
-        // MockBukkit kann keine Blickrichtung auswerten – Tests legen fest, wer welchen Block anschaut
-        plugin.chestService().setTargetFinder(looking::get);
     }
-
-    private final Map<Player, Block> looking = new HashMap<>();
 
     @AfterEach
     void tearDown() {
@@ -75,12 +61,6 @@ class ModChannelTest {
         return null;
     }
 
-    private Block chest() {
-        Block block = world.getBlockAt(0, 64, 0);
-        block.setType(Material.CHEST);
-        return block;
-    }
-
     @Test
     void stringCodecRoundTrip() {
         String longText = "ä".repeat(300) + "x".repeat(20000);
@@ -90,18 +70,19 @@ class ModChannelTest {
 
     @Test
     void helloAnswersWithHelloAndState() {
-        send(anna, "{\"t\":\"hello\",\"v\":1}");
-        assertNotNull(last(anna, "hello"));
+        send(anna, "{\"t\":\"hello\",\"v\":2}");
+        assertEquals(2, last(anna, "hello").get("v").getAsInt());
         JsonObject state = last(anna, "state");
         assertNotNull(state);
         assertTrue(state.get("group").isJsonNull());
         assertTrue(state.getAsJsonArray("online").toString().contains("Ben"));
+        assertNotNull(last(anna, "sync_end"), "Kisten-Sync gleich nach dem Hallo");
     }
 
     @Test
     void groupFlowThroughUi() {
-        send(anna, "{\"t\":\"hello\"}");
-        send(ben, "{\"t\":\"hello\"}");
+        send(anna, "{\"t\":\"hello\",\"v\":2}");
+        send(ben, "{\"t\":\"hello\",\"v\":2}");
 
         send(anna, "{\"t\":\"group\",\"op\":\"create\",\"arg\":\"Noobs\"}");
         assertTrue(last(anna, "result").get("ok").getAsBoolean());
@@ -118,104 +99,33 @@ class ModChannelTest {
     }
 
     @Test
-    void shareChestByPosition() {
-        Block block = chest();
-        plugin.locks().setLock(block, ContainerLock.ownedBy(anna.getUniqueId()));
+    void friendsThroughUi() {
+        send(anna, "{\"t\":\"hello\",\"v\":2}");
+        send(ben, "{\"t\":\"hello\",\"v\":2}");
+        send(anna, "{\"t\":\"trust\",\"player\":\"Ben\"}");
+        assertTrue(plugin.trust().trusts(anna.getUniqueId(), ben.getUniqueId()));
+        assertTrue(last(anna, "state").getAsJsonArray("friends").toString().contains("Ben"));
+        assertTrue(last(ben, "state").getAsJsonArray("friend_of").toString().contains("Anna"),
+                "Ben sieht, wessen Kisten er bekommt");
 
-        // Aus der Ferne verrät der Server Fremden nichts über die Truhe
-        send(ben, "{\"t\":\"info\",\"pos\":[0,64,0]}");
-        assertEquals("unloaded", last(ben, "chest").get("status").getAsString());
-        assertNull(last(ben, "chest").get("owner"));
-
-        // Schaut Ben sie an, sieht er nur den Besitzer, nicht mit wem geteilt ist
-        looking.put(ben, block);
-        send(ben, "{\"t\":\"info\",\"pos\":[0,64,0]}");
-        JsonObject forBen = last(ben, "chest");
-        assertEquals("locked", forBen.get("status").getAsString());
-        assertEquals("Anna", forBen.get("owner").getAsString());
-        assertFalse(forBen.get("access").getAsBoolean());
-        assertNull(forBen.get("shared"));
-        looking.remove(ben);
-
-        // Die Besitzerin darf aus der Ferne verwalten
-        send(anna, "{\"t\":\"share\",\"pos\":[0,64,0],\"player\":\"Ben\"}");
-        assertTrue(last(anna, "result").get("ok").getAsBoolean());
-        assertTrue(last(anna, "chest").getAsJsonArray("shared").toString().contains("Ben"));
-
-        // Mit Zugriff gibt es die Infos auch aus der Ferne
-        send(ben, "{\"t\":\"info\",\"pos\":[0,64,0]}");
-        assertTrue(last(ben, "chest").get("access").getAsBoolean());
-        assertEquals("shared", last(ben, "chest").get("reason").getAsString());
+        send(anna, "{\"t\":\"untrust\",\"player\":\"Ben\"}");
+        assertFalse(plugin.trust().trusts(anna.getUniqueId(), ben.getUniqueId()));
     }
 
     @Test
-    void strangerCannotManageAndFarClaimIsRefused() {
-        Block block = chest();
-        plugin.locks().setLock(block, ContainerLock.ownedBy(anna.getUniqueId()));
-
-        send(ben, "{\"t\":\"unlock\",\"pos\":[0,64,0]}");
-        assertFalse(last(ben, "result").get("ok").getAsBoolean());
-        assertNotNull(plugin.locks().getLock(block));
-
-        // Ungesicherte Truhe sichern, ohne sie anzuschauen (z.B. durch eine Wand) → abgelehnt
-        plugin.locks().clearLock(block);
-        send(ben, "{\"t\":\"lock\",\"pos\":[0,64,0]}");
-        assertFalse(last(ben, "result").get("ok").getAsBoolean());
-        send(anna, "{\"t\":\"lock\",\"pos\":[0,64,0]}");
-        assertFalse(last(anna, "result").get("ok").getAsBoolean(), "Anna steht nah, schaut aber nicht hin");
-        send(anna, "{\"t\":\"share\",\"pos\":[0,64,0],\"player\":\"Ben\"}");
-        assertFalse(last(anna, "result").get("ok").getAsBoolean(), "Teilen sichert mit – gleiche Regel");
-        assertNull(plugin.locks().getLock(block));
-
-        // Anna schaut die Truhe an → geht
-        looking.put(anna, block);
-        send(anna, "{\"t\":\"info\",\"pos\":[0,64,0]}");
-        assertTrue(last(anna, "chest").get("claimable").getAsBoolean());
-        send(anna, "{\"t\":\"lock\",\"pos\":[0,64,0]}");
-        assertTrue(last(anna, "result").get("ok").getAsBoolean());
-        assertNotNull(plugin.locks().getLock(block));
+    void syncRequestsAreThrottled() {
+        send(anna, "{\"t\":\"hello\",\"v\":2}");
+        inbox.clear();
+        send(anna, "{\"t\":\"sync\"}");
+        assertTrue(inbox.getOrDefault(anna, List.of()).isEmpty(), "gleich nach dem Hallo kein zweiter Sync");
     }
 
     @Test
     void badInputIsIgnored() {
         channel.onPluginMessageReceived(ModChannel.CHANNEL, anna, new byte[]{(byte) 0xFF, (byte) 0xFF});
         send(anna, "kein json");
-        send(anna, "{\"t\":\"info\",\"pos\":[1,2]}");
-        send(anna, "{\"t\":\"info\",\"pos\":[0,99999,0]}");
-        assertEquals("unloaded", last(anna, "chest").get("status").getAsString());
-
-        Block stone = world.getBlockAt(5, 64, 5);
-        stone.setType(Material.STONE);
-        send(anna, "{\"t\":\"info\",\"pos\":[5,64,5]}");
-        assertEquals("unloaded", last(anna, "chest").get("status").getAsString(), "aus der Ferne: nichts verraten");
-        looking.put(anna, stone);
-        send(anna, "{\"t\":\"info\",\"pos\":[5,64,5]}");
-        assertEquals("none", last(anna, "chest").get("status").getAsString());
-    }
-
-    /** Ein umgebauter Mod darf nicht die Umgebung nach Truhen und Besitzern abfragen. */
-    @Test
-    void remoteScanRevealsNothing() {
-        for (int x = 0; x < 4; x++) {
-            Block block = world.getBlockAt(x * 2, 64, 6);
-            block.setType(Material.CHEST);
-            if (x % 2 == 0) {
-                plugin.locks().setLock(block, ContainerLock.ownedBy(anna.getUniqueId()));
-            }
-            send(ben, "{\"t\":\"info\",\"pos\":[" + (x * 2) + ",64,6]}");
-            assertEquals("unloaded", last(ben, "chest").get("status").getAsString());
-            assertNull(last(ben, "chest").get("owner"));
-        }
-    }
-
-    @Test
-    void friendsThroughUi() {
-        send(anna, "{\"t\":\"trust\",\"player\":\"Ben\"}");
-        assertTrue(plugin.trust().trusts(anna.getUniqueId(), ben.getUniqueId()));
-        send(anna, "{\"t\":\"hello\"}");
-        assertTrue(last(anna, "state").getAsJsonArray("friends").toString().contains("Ben"));
-
-        send(anna, "{\"t\":\"untrust\",\"player\":\"Ben\"}");
-        assertFalse(plugin.trust().trusts(anna.getUniqueId(), ben.getUniqueId()));
+        send(anna, "{\"t\":\"group\",\"op\":\"gibtsnicht\"}");
+        send(anna, "{\"t\":\"lock\",\"pos\":[0,64,0]}"); // alte Mod-Version
+        assertTrue(inbox.getOrDefault(anna, List.of()).isEmpty());
     }
 }

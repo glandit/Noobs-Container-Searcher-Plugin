@@ -60,7 +60,7 @@ class MessagesTest {
                 placeholder("label", "ncs"), placeholder("distance", 5),
                 placeholder("shared", "Ben"), placeholder("friends", "Ben"), placeholder("list", "Ben"),
                 placeholder("leader", "Anna"), placeholder("count", 2), placeholder("members", "Anna, Ben"),
-                placeholder("minutes", 5), placeholder("x", 1), placeholder("y", 2), placeholder("z", 3)));
+                placeholder("minutes", 5), placeholder("stacks", 3), placeholder("visible", "yes")));
         List<String> problems = new ArrayList<>();
         for (String code : Messages.BUNDLED) {
             YamlConfiguration language = bundled(code);
@@ -102,11 +102,23 @@ class MessagesTest {
 
     @Test
     void eachPlayerGetsTheirGameLanguage() {
-        assertEquals("Chest locked. Only you have access.", messages.plain(player("Eng", Locale.US), "locked"));
-        assertEquals("Truhe gesichert. Nur du hast Zugriff.", messages.plain(player("Deu", Locale.GERMANY), "locked"));
-        assertEquals("Baú trancado. Só você tem acesso.", messages.plain(player("Bra", Locale.of("pt", "BR")), "locked"));
-        assertEquals("Сундук заперт. Доступ есть только у вас.", messages.plain(player("Rus", Locale.of("ru", "RU")), "locked"));
-        assertEquals("Sandık kilitlendi. Sadece sen erişebilirsin.", messages.plain(player("Tur", Locale.of("tr", "TR")), "locked"));
+        assertEquals("Friends (see all your chests): Ben", messages.plain(player("Eng", Locale.US), "trust-list", placeholder("list", "Ben")));
+        assertEquals("Freunde (sehen alle deine Truhen): Ben", messages.plain(player("Deu", Locale.GERMANY), "trust-list", placeholder("list", "Ben")));
+        assertEquals("Amigos (veem todos os seus baús): Ben", messages.plain(player("Bra", Locale.of("pt", "BR")), "trust-list", placeholder("list", "Ben")));
+        assertEquals("Друзья (видят все ваши сундуки): Ben", messages.plain(player("Rus", Locale.of("ru", "RU")), "trust-list", placeholder("list", "Ben")));
+        assertEquals("Arkadaşlar (tüm sandıklarını görür): Ben", messages.plain(player("Tur", Locale.of("tr", "TR")), "trust-list", placeholder("list", "Ben")));
+    }
+
+    /** Sprachdateien vom ersten Test-Release (Sperren statt Sync) werden gesichert und ersetzt. */
+    @Test
+    void outdatedLanguageFilesAreReplaced() throws java.io.IOException {
+        NoobsContainerSearcher plugin = (NoobsContainerSearcher) server.getPluginManager().getPlugin("Noobs-Container-Searcher");
+        java.io.File file = new java.io.File(plugin.getDataFolder(), "lang/en_us.yml");
+        java.nio.file.Files.writeString(file.toPath(), "trust-list: \"<gold>Friends (access to all chests): <white><list>\"\n");
+        plugin.reload();
+        assertEquals("Friends (see all your chests): Ben",
+                plugin.messages().plain(player("Eng", Locale.US), "trust-list", placeholder("list", "Ben")));
+        assertTrue(new java.io.File(plugin.getDataFolder(), "lang/en_us.yml.old").exists());
     }
 
     @Test
