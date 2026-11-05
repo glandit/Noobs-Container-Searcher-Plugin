@@ -1,0 +1,42 @@
+# ============================================================
+#  Noobs-Container-Searcher – lock & share chests
+#  (Truhen sichern & teilen)
+# ============================================================
+
+# Language of all messages / Sprache aller Nachrichten:
+#   auto  = each player gets their own game language (fallback: English)
+#           jeder Spieler bekommt seine Spielsprache (sonst Englisch)
+#   en_us, de_de, pt_br, ru_ru, tr_tr = same language for everyone
+# Texts can be edited in plugins/Noobs-Container-Searcher/lang/<language>.yml.
+# A new file there (e.g. fr_fr.yml) adds a language.
+language: auto
+
+# Neue Truhen beim Platzieren automatisch für den Spieler sichern.
+# false = Spieler sichern selbst mit /truhe sperren
+auto-lock: true
+
+# Welche Blöcke geschützt werden können (Material-Namen).
+lockable-blocks:
+  - CHEST
+  - TRAPPED_CHEST
+  - BARREL
+
+# Gesicherte Truhen überstehen Creeper, TNT, Wither usw.
+protect-from-explosions: true
+
+# Trichter dürfen nur aus gesicherten Truhen ziehen, wenn sie von jemandem
+# mit Zugriff gesetzt wurden. Trichterloren werden immer blockiert.
+protect-from-hoppers: true
+
+# Admins (ncs.admin) sehen eine Meldung, wenn sie eine fremde Truhe öffnen.
+notify-admin-access: true
+
+# Wie weit man eine Truhe für /truhe ... anschauen darf (Blöcke, max. 10).
+target-distance: 5
+
+# Gruppen (/gruppe): Alle Mitglieder haben Zugriff auf alle Truhen der anderen.
+groups:
+  # Dürfen Mitglieder die Truhen der anderen auch abbauen?
+  members-can-break: true
+  # Wie lange eine Einladung gültig ist (Sekunden).
+  invite-seconds: 300

@@ -1,0 +1,10 @@
+.gradle/
+build/
+.idea/
+*.iml
+
+# not part of the plugin repo
+/mod/
+/mod-jars/
+/screenshots/
+/*.jar
