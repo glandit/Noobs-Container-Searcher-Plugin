@@ -410,6 +410,26 @@ class SyncTest {
         assertTrue(raw.get(anna).stream().anyMatch(m -> m.startsWith("#frag ")), "eine Truhe allein ist zu groß → Stücke");
     }
 
+    /**
+     * Chunks, die beim Start schon geladen sind (Spawn, forceload, /reload), bekommen kein ChunkLoadEvent:
+     * ihre Container werden beim Start trotzdem neu gelesen. (Alte Sperren aus 1.0.0 findet derselbe Weg über
+     * getTileEntities – das kann MockBukkit nicht, das ist auf einem echten Server geprüft.)
+     */
+    @Test
+    void containersInChunksLoadedBeforeTheStartAreReadAgain() {
+        Block block = chestOf(anna, 4, new ItemStack(Material.DIAMOND, 5));
+        server.getPluginManager().disablePlugin(plugin);
+        ((Container) block.getState(false)).getInventory().addItem(new ItemStack(Material.EMERALD, 2)); // Plugin aus: kein Event
+        server.getPluginManager().enablePlugin(plugin);
+        ContainerIndex restarted = plugin.index();
+        restarted.setEncoder(stack -> stack.getType().name() + "x" + stack.getAmount());
+        restarted.processAll();
+        ContainerSnapshot snapshot = restarted.get(block);
+        assertTrue(snapshot != null);
+        assertTrue(snapshot.items().stream().anyMatch(item -> item.id().contains("emerald")),
+                "Änderung aus der Zeit ohne Plugin fehlt: " + snapshot.items());
+    }
+
     @Test
     void fragmentsRoundTrip() {
         String json = "{\"t\":\"x\",\"d\":\"" + "ab😀".repeat(40_000) + "\"}";

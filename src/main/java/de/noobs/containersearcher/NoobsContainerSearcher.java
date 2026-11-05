@@ -1,5 +1,7 @@
 package de.noobs.containersearcher;
 
+import org.bukkit.Chunk;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
@@ -46,6 +48,13 @@ public class NoobsContainerSearcher extends JavaPlugin {
         messages = new Messages();
         reload();
         index.load();
+        // Chunks, die schon vor dem Plugin geladen waren (Spawn, /forceload, /reload), bekommen kein ChunkLoadEvent
+        // mehr – dort Container mit Besitzer (auch alte Sperren aus 1.0.0) jetzt suchen
+        for (World world : getServer().getWorlds()) {
+            for (Chunk chunk : world.getLoadedChunks()) {
+                index.onChunkLoad(chunk);
+            }
+        }
         groupService = new GroupService(this);
 
         // Kisten-Sync und Bedienung über das UI des Client-Mods "Noob's Container Searcher"
