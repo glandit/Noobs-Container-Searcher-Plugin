@@ -111,6 +111,16 @@ class SyncTest {
     }
 
     /** Container aus dem letzten vollständigen Sync (sync_begin … sync_end). */
+    /** Komplette Syncs kommen höchstens alle 5 Sekunden pro Spieler – so lange warten. */
+    private void waitForSyncs() {
+        server.getScheduler().performTicks(ModChannel.SYNC_COOLDOWN_TICKS + 21);
+    }
+
+    private long syncCount(Player player) {
+        return inbox.getOrDefault(player, List.of()).stream()
+                .filter(m -> m.get("t").getAsString().equals("sync_begin")).count();
+    }
+
     private List<JsonObject> lastSync(Player player) {
         List<JsonObject> all = inbox.getOrDefault(player, List.of());
         int begin = -1;
@@ -283,6 +293,7 @@ class SyncTest {
         anna.performCommand("gruppe erstellen Noobs");
         anna.performCommand("gruppe einladen Ben");
         ben.performCommand("gruppe annehmen");
+        waitForSyncs();
 
         assertEquals(2, lastSync(ben).size(), "Ben bekommt Annas Truhe dazu");
         assertEquals(2, lastSync(anna).size(), "Anna bekommt Bens Truhe dazu");
@@ -290,6 +301,7 @@ class SyncTest {
         assertFalse(annas.get("mine").getAsBoolean());
 
         ben.performCommand("gruppe verlassen");
+        waitForSyncs();
         assertEquals(1, lastSync(ben).size(), "nach dem Verlassen nur noch die eigene");
         assertEquals("Ben", lastSync(ben).get(0).get("owner").getAsString());
     }
@@ -301,12 +313,32 @@ class SyncTest {
         hello(anna);
         hello(carl);
         anna.performCommand("truhe vertrauen Carl");
+        waitForSyncs();
         List<JsonObject> forCarl = lastSync(carl);
         assertEquals(2, forCarl.size(), "Carl sieht Annas und seine eigene");
         assertEquals(1, lastSync(anna).size(), "Anna sieht Carls nicht – nur Carl ist Annas Freund");
 
         anna.performCommand("truhe misstrauen Carl");
+        waitForSyncs();
         assertEquals(1, lastSync(carl).size());
+    }
+
+    /** Freund an/aus im Sekundentakt löst nicht jedes Mal einen kompletten Sync aus. */
+    @Test
+    void togglingFriendsDoesNotFloodFullSyncs() {
+        chestOf(anna, 0, new ItemStack(Material.DIAMOND, 5));
+        hello(anna);
+        hello(carl);
+        long before = syncCount(carl);
+        for (int i = 0; i < 10; i++) {
+            anna.performCommand("truhe vertrauen Carl");
+            anna.performCommand("truhe misstrauen Carl");
+        }
+        anna.performCommand("truhe vertrauen Carl");
+        assertEquals(before, syncCount(carl), "während der Pause noch kein neuer Sync");
+        waitForSyncs();
+        assertEquals(before + 1, syncCount(carl), "danach genau einer, mit dem letzten Stand");
+        assertEquals(1, lastSync(carl).size(), "Carl sieht Annas Truhe");
     }
 
     @Test

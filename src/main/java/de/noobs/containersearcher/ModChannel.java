@@ -20,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,12 +71,17 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
     private static final int MAX_BYTES = 16 * 1024;
     private static final int MAX_PER_SECOND = 20;
     private static final int MAX_ONLINE_NAMES = 200;
-    private static final long SYNC_COOLDOWN_MS = 5_000L;
+    /** Ein kompletter Sync kostet viel: pro Spieler höchstens alle 5 Sekunden. */
+    static final int SYNC_COOLDOWN_TICKS = 100;
+    private static final long RETRY_TICKS = 20L;
 
     private final NoobsContainerSearcher plugin;
     private final Map<UUID, Integer> clients = new HashMap<>();
     private final Map<UUID, long[]> rate = new HashMap<>();
-    private final Map<UUID, Long> lastRequestedSync = new HashMap<>();
+    private final Map<UUID, Integer> lastFullSync = new HashMap<>();
+    /** Wartet auf den nächsten kompletten Sync (Wünsche während der Pause werden gesammelt). */
+    private final Set<UUID> pendingSync = new LinkedHashSet<>();
+    private boolean flushScheduled;
     private BiConsumer<Player, byte[]> transport;
     private int nextFragment;
 
@@ -168,15 +175,9 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
                 hello.addProperty("v", VERSION);
                 send(player, hello);
                 sendState(player);
-                if (mayRequestSync(uuid)) {
-                    fullSync(player);
-                }
+                requestFullSync(player);
             }
-            case "sync" -> {
-                if (mayRequestSync(uuid)) {
-                    fullSync(player);
-                }
-            }
+            case "sync" -> requestFullSync(player);
             case "trust" -> result(player, type, plugin.groupService().trust(player, string(in, "player")));
             case "untrust" -> result(player, type, plugin.groupService().untrust(player, string(in, "player")));
             case "group" -> groupAction(player, in);
@@ -222,7 +223,7 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
             Player online = Bukkit.getPlayer(uuid);
             if (online != null && clients.containsKey(uuid)) {
                 sendState(online);
-                fullSync(online);
+                requestFullSync(online);
             }
         }
     }
@@ -311,6 +312,7 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         if (!syncs(me)) {
             return;
         }
+        lastFullSync.put(me, Bukkit.getCurrentTick());
         send(player, message("sync_begin"));
         String head = "{\"t\":\"containers\",\"list\":[";
         StringBuilder batch = new StringBuilder(head);
@@ -437,21 +439,51 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
         UUID uuid = event.getPlayer().getUniqueId();
         clients.remove(uuid);
         rate.remove(uuid);
-        lastRequestedSync.remove(uuid);
+        lastFullSync.remove(uuid);
+        pendingSync.remove(uuid);
         Bukkit.getScheduler().runTask(plugin, this::refreshAll);
     }
 
     // ------------------------------------------------------------------ Hilfsfunktionen
 
-    /** Ein kompletter Sync kostet viel – auf Wunsch des Clients höchstens alle paar Sekunden. */
-    private boolean mayRequestSync(UUID player) {
-        long now = System.currentTimeMillis();
-        Long last = lastRequestedSync.get(player);
-        if (last != null && now - last < SYNC_COOLDOWN_MS) {
-            return false;
+    /**
+     * Kompletter Sync sofort, wenn der letzte lange genug her ist, sonst sobald die Pause vorbei ist.
+     * So kann niemand mit vielen Anfragen oder Freund-An/Aus den Server mit Syncs fluten.
+     */
+    private void requestFullSync(Player player) {
+        UUID uuid = player.getUniqueId();
+        Integer last = lastFullSync.get(uuid);
+        if (last == null || Bukkit.getCurrentTick() - last >= SYNC_COOLDOWN_TICKS) {
+            pendingSync.remove(uuid);
+            fullSync(player);
+            return;
         }
-        lastRequestedSync.put(player, now);
-        return true;
+        pendingSync.add(uuid);
+        if (!flushScheduled) {
+            flushScheduled = true;
+            Bukkit.getScheduler().runTaskLater(plugin, this::flushPendingSyncs, RETRY_TICKS);
+        }
+    }
+
+    private void flushPendingSyncs() {
+        flushScheduled = false;
+        for (Iterator<UUID> it = pendingSync.iterator(); it.hasNext(); ) {
+            UUID uuid = it.next();
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !clients.containsKey(uuid)) {
+                it.remove();
+                continue;
+            }
+            Integer last = lastFullSync.get(uuid);
+            if (last == null || Bukkit.getCurrentTick() - last >= SYNC_COOLDOWN_TICKS) {
+                it.remove();
+                fullSync(player);
+            }
+        }
+        if (!pendingSync.isEmpty()) {
+            flushScheduled = true;
+            Bukkit.getScheduler().runTaskLater(plugin, this::flushPendingSyncs, RETRY_TICKS);
+        }
     }
 
     private boolean withinRate(Player player) {
