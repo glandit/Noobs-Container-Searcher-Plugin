@@ -288,14 +288,21 @@ public final class ModChannel implements PluginMessageListener, Listener, Client
             return out;
         }
         LockManager locks = plugin.locks();
+        // Aus der Ferne gibt es nur Infos zu Truhen, die man selbst öffnen darf. Alles andere nur für die
+        // Truhe, die man gerade anschaut – sonst könnte ein umgebauter Mod die Umgebung nach Besitzern abfragen.
+        boolean looking = plugin.chestService().inReach(player, block);
+        ContainerLock lock = locks.isLockable(block) ? locks.getLock(block) : null;
+        if (!looking && (lock == null || !locks.canOpen(player, block))) {
+            out.addProperty("status", "unloaded");
+            return out;
+        }
         if (!locks.isLockable(block)) {
             out.addProperty("status", "none");
             return out;
         }
-        ContainerLock lock = locks.getLock(block);
         if (lock == null) {
             out.addProperty("status", "unlocked");
-            out.addProperty("claimable", plugin.chestService().nearEnough(player, block));
+            out.addProperty("claimable", looking);
             return out;
         }
         UUID me = player.getUniqueId();

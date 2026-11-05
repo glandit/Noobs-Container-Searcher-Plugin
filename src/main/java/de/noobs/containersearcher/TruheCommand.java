@@ -108,14 +108,14 @@ public final class TruheCommand implements TabExecutor {
 
     private void blockCommand(Player player, Sub sub, String label, String[] args) {
         int distance = plugin.settings().targetDistance();
-        Block block = player.getTargetBlockExact(distance);
+        Block block = chests.targetBlock(player);
         if (block == null || !locks.isLockable(block)) {
             messages.send(player, "no-target", placeholder("distance", distance));
             return;
         }
 
         switch (sub) {
-            case INFO -> info(player, locks.getLock(block));
+            case INFO -> info(player, block);
             case LOCK -> chests.lock(player, block).send(messages, player);
             case UNLOCK -> chests.unlock(player, block).send(messages, player);
             case SHARE -> {
@@ -140,13 +140,20 @@ public final class TruheCommand implements TabExecutor {
         return false;
     }
 
-    private void info(Player player, @Nullable ContainerLock lock) {
+    private void info(Player player, Block block) {
+        ContainerLock lock = locks.getLock(block);
         if (lock == null) {
             messages.send(player, "info-unlocked");
             return;
         }
+        // Fremde sehen nur, wem die Truhe gehört – nicht, mit wem sie geteilt ist
+        if (!locks.canOpen(player, block)) {
+            messages.send(player, "denied", placeholder("owner", nameOf(lock.owner())));
+            return;
+        }
         GroupStore.Group group = plugin.groups().groupOf(lock.owner());
-        messages.send(player, "info",
+        // die Freundesliste des Besitzers geht nur ihn selbst (und Admins) etwas an
+        messages.send(player, locks.canManage(player, lock) ? "info" : "info-member",
                 placeholder("owner", nameOf(lock.owner())),
                 placeholder("shared", messages.nameList(player, lock.shared())),
                 placeholder("friends", messages.nameList(player, trust.friendsOf(lock.owner()))),
@@ -177,9 +184,10 @@ public final class TruheCommand implements TabExecutor {
                     .filter(p -> !p.equals(player) && player.canSee(p))
                     .map(Player::getName).toList(), args[1]);
             case UNSHARE -> {
-                Block block = player.getTargetBlockExact(plugin.settings().targetDistance());
+                Block block = chests.targetBlock(player);
                 ContainerLock lock = block == null || !locks.isLockable(block) ? null : locks.getLock(block);
-                yield lock == null ? List.of() : filter(names(lock.shared()), args[1]);
+                // nur wer die Truhe verwalten darf, bekommt die Freigaben vorgeschlagen
+                yield lock == null || !locks.canManage(player, lock) ? List.of() : filter(names(lock.shared()), args[1]);
             }
             case UNTRUST -> filter(names(trust.friendsOf(player.getUniqueId())), args[1]);
             default -> List.of();

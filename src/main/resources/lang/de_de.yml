@@ -7,7 +7,7 @@ no-permission: "<red>Dafür hast du keine Rechte."
 no-target: "<red>Schau eine Truhe oder ein Fass an (max. <distance> Blöcke entfernt)."
 unknown-player: "<red>Spieler <white><player></white> war noch nie auf dem Server."
 reloaded: "<green>Konfiguration neu geladen."
-too-far: "<red>Zu weit weg – geh näher an die Truhe, um sie zu sichern."
+too-far: "<red>Schau die Truhe aus der Nähe an, um sie zu sichern."
 chest-unavailable: "<red>Truhe nicht gefunden – ist sie in der Nähe und geladen?"
 
 usage-share: "<red>Benutzung: <white>/<label> teilen [Spieler]"
@@ -50,6 +50,11 @@ info:
   - "<gold>Besitzer: <white><owner>"
   - "<gold>Geteilt mit: <white><shared>"
   - "<gold>Freunde des Besitzers: <white><friends>"
+  - "<gold>Gruppe des Besitzers: <white><group>"
+info-member:
+  - "<dark_gray>――――――― <gold>Truhen-Info</gold> ―――――――"
+  - "<gold>Besitzer: <white><owner>"
+  - "<gold>Geteilt mit: <white><shared>"
   - "<gold>Gruppe des Besitzers: <white><group>"
 
 # vertrauen / misstrauen / freunde

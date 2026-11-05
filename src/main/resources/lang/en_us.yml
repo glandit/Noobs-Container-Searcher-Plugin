@@ -8,7 +8,7 @@ no-permission: "<red>You don't have permission to do that."
 no-target: "<red>Look at a chest or barrel (max. <distance> blocks away)."
 unknown-player: "<red>Player <white><player></white> has never been on this server."
 reloaded: "<green>Configuration reloaded."
-too-far: "<red>Too far away – get closer to the chest to lock it."
+too-far: "<red>Look at the chest from up close to lock it."
 chest-unavailable: "<red>Chest not found – is it nearby and loaded?"
 
 usage-share: "<red>Usage: <white>/<label> share [player]"
@@ -51,6 +51,11 @@ info:
   - "<gold>Owner: <white><owner>"
   - "<gold>Shared with: <white><shared>"
   - "<gold>Owner's friends: <white><friends>"
+  - "<gold>Owner's group: <white><group>"
+info-member:
+  - "<dark_gray>――――――― <gold>Chest info</gold> ―――――――"
+  - "<gold>Owner: <white><owner>"
+  - "<gold>Shared with: <white><shared>"
   - "<gold>Owner's group: <white><group>"
 
 # trust / untrust / friends

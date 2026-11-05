@@ -7,7 +7,7 @@ no-permission: "<red>Bunun için iznin yok."
 no-target: "<red>Bir sandığa veya varile bak (en fazla <distance> blok uzakta)."
 unknown-player: "<red><white><player></white> adlı oyuncu bu sunucuya hiç girmedi."
 reloaded: "<green>Yapılandırma yeniden yüklendi."
-too-far: "<red>Çok uzak – kilitlemek için sandığa yaklaş."
+too-far: "<red>Kilitlemek için sandığa yakından bak."
 chest-unavailable: "<red>Sandık bulunamadı – yakında ve yüklü mü?"
 
 usage-share: "<red>Kullanım: <white>/<label> share [oyuncu]"
@@ -50,6 +50,11 @@ info:
   - "<gold>Sahibi: <white><owner>"
   - "<gold>Paylaşılanlar: <white><shared>"
   - "<gold>Sahibinin arkadaşları: <white><friends>"
+  - "<gold>Sahibinin grubu: <white><group>"
+info-member:
+  - "<dark_gray>――――――― <gold>Sandık bilgisi</gold> ―――――――"
+  - "<gold>Sahibi: <white><owner>"
+  - "<gold>Paylaşılanlar: <white><shared>"
   - "<gold>Sahibinin grubu: <white><group>"
 
 # arkadaşlar

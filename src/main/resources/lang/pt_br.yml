@@ -7,7 +7,7 @@ no-permission: "<red>Você não tem permissão para isso."
 no-target: "<red>Olhe para um baú ou barril (máx. <distance> blocos de distância)."
 unknown-player: "<red>O jogador <white><player></white> nunca entrou neste servidor."
 reloaded: "<green>Configuração recarregada."
-too-far: "<red>Longe demais – chegue mais perto do baú para trancá-lo."
+too-far: "<red>Olhe para o baú de perto para trancá-lo."
 chest-unavailable: "<red>Baú não encontrado – ele está perto e carregado?"
 
 usage-share: "<red>Uso: <white>/<label> share [jogador]"
@@ -50,6 +50,11 @@ info:
   - "<gold>Dono: <white><owner>"
   - "<gold>Compartilhado com: <white><shared>"
   - "<gold>Amigos do dono: <white><friends>"
+  - "<gold>Grupo do dono: <white><group>"
+info-member:
+  - "<dark_gray>――――――― <gold>Info do baú</gold> ―――――――"
+  - "<gold>Dono: <white><owner>"
+  - "<gold>Compartilhado com: <white><shared>"
   - "<gold>Grupo do dono: <white><group>"
 
 # amigos

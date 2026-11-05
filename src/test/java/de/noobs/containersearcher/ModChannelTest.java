@@ -49,7 +49,11 @@ class ModChannelTest {
         anna.teleport(new Location(world, 0.5, 64, 2.5));
         ben.teleport(new Location(world, 40.5, 64, 40.5));
         world.loadChunk(0, 0); // auf dem echten Server: Spieler in der Nähe
+        // MockBukkit kann keine Blickrichtung auswerten – Tests legen fest, wer welchen Block anschaut
+        plugin.chestService().setTargetFinder(looking::get);
     }
+
+    private final Map<Player, Block> looking = new HashMap<>();
 
     @AfterEach
     void tearDown() {
@@ -118,18 +122,27 @@ class ModChannelTest {
         Block block = chest();
         plugin.locks().setLock(block, ContainerLock.ownedBy(anna.getUniqueId()));
 
-        // Ben sieht nur den Besitzer, nicht mit wem geteilt ist
+        // Aus der Ferne verrät der Server Fremden nichts über die Truhe
+        send(ben, "{\"t\":\"info\",\"pos\":[0,64,0]}");
+        assertEquals("unloaded", last(ben, "chest").get("status").getAsString());
+        assertNull(last(ben, "chest").get("owner"));
+
+        // Schaut Ben sie an, sieht er nur den Besitzer, nicht mit wem geteilt ist
+        looking.put(ben, block);
         send(ben, "{\"t\":\"info\",\"pos\":[0,64,0]}");
         JsonObject forBen = last(ben, "chest");
         assertEquals("locked", forBen.get("status").getAsString());
         assertEquals("Anna", forBen.get("owner").getAsString());
         assertFalse(forBen.get("access").getAsBoolean());
         assertNull(forBen.get("shared"));
+        looking.remove(ben);
 
+        // Die Besitzerin darf aus der Ferne verwalten
         send(anna, "{\"t\":\"share\",\"pos\":[0,64,0],\"player\":\"Ben\"}");
         assertTrue(last(anna, "result").get("ok").getAsBoolean());
         assertTrue(last(anna, "chest").getAsJsonArray("shared").toString().contains("Ben"));
 
+        // Mit Zugriff gibt es die Infos auch aus der Ferne
         send(ben, "{\"t\":\"info\",\"pos\":[0,64,0]}");
         assertTrue(last(ben, "chest").get("access").getAsBoolean());
         assertEquals("shared", last(ben, "chest").get("reason").getAsString());
@@ -144,13 +157,20 @@ class ModChannelTest {
         assertFalse(last(ben, "result").get("ok").getAsBoolean());
         assertNotNull(plugin.locks().getLock(block));
 
-        // Ungesicherte Truhe aus 40 Blöcken Entfernung sichern → abgelehnt
+        // Ungesicherte Truhe sichern, ohne sie anzuschauen (z.B. durch eine Wand) → abgelehnt
         plugin.locks().clearLock(block);
         send(ben, "{\"t\":\"lock\",\"pos\":[0,64,0]}");
         assertFalse(last(ben, "result").get("ok").getAsBoolean());
+        send(anna, "{\"t\":\"lock\",\"pos\":[0,64,0]}");
+        assertFalse(last(anna, "result").get("ok").getAsBoolean(), "Anna steht nah, schaut aber nicht hin");
+        send(anna, "{\"t\":\"share\",\"pos\":[0,64,0],\"player\":\"Ben\"}");
+        assertFalse(last(anna, "result").get("ok").getAsBoolean(), "Teilen sichert mit – gleiche Regel");
         assertNull(plugin.locks().getLock(block));
 
-        // Anna steht daneben → geht
+        // Anna schaut die Truhe an → geht
+        looking.put(anna, block);
+        send(anna, "{\"t\":\"info\",\"pos\":[0,64,0]}");
+        assertTrue(last(anna, "chest").get("claimable").getAsBoolean());
         send(anna, "{\"t\":\"lock\",\"pos\":[0,64,0]}");
         assertTrue(last(anna, "result").get("ok").getAsBoolean());
         assertNotNull(plugin.locks().getLock(block));
@@ -164,9 +184,28 @@ class ModChannelTest {
         send(anna, "{\"t\":\"info\",\"pos\":[0,99999,0]}");
         assertEquals("unloaded", last(anna, "chest").get("status").getAsString());
 
-        world.getBlockAt(5, 64, 5).setType(Material.STONE);
+        Block stone = world.getBlockAt(5, 64, 5);
+        stone.setType(Material.STONE);
+        send(anna, "{\"t\":\"info\",\"pos\":[5,64,5]}");
+        assertEquals("unloaded", last(anna, "chest").get("status").getAsString(), "aus der Ferne: nichts verraten");
+        looking.put(anna, stone);
         send(anna, "{\"t\":\"info\",\"pos\":[5,64,5]}");
         assertEquals("none", last(anna, "chest").get("status").getAsString());
+    }
+
+    /** Ein umgebauter Mod darf nicht die Umgebung nach Truhen und Besitzern abfragen. */
+    @Test
+    void remoteScanRevealsNothing() {
+        for (int x = 0; x < 4; x++) {
+            Block block = world.getBlockAt(x * 2, 64, 6);
+            block.setType(Material.CHEST);
+            if (x % 2 == 0) {
+                plugin.locks().setLock(block, ContainerLock.ownedBy(anna.getUniqueId()));
+            }
+            send(ben, "{\"t\":\"info\",\"pos\":[" + (x * 2) + ",64,6]}");
+            assertEquals("unloaded", last(ben, "chest").get("status").getAsString());
+            assertNull(last(ben, "chest").get("owner"));
+        }
     }
 
     @Test

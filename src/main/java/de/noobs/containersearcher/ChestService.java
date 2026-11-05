@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static de.noobs.containersearcher.Messages.nameOf;
 import static de.noobs.containersearcher.Messages.placeholder;
@@ -18,20 +19,42 @@ public final class ChestService {
     private final NoobsContainerSearcher plugin;
     private final LockManager locks;
     private final Messages messages;
+    private Function<Player, Block> targetFinder;
 
     public ChestService(NoobsContainerSearcher plugin) {
         this.plugin = plugin;
         this.locks = plugin.locks();
         this.messages = plugin.messages();
+        this.targetFinder = player -> player.getTargetBlockExact(plugin.settings().targetDistance());
     }
 
-    /** Ungesicherte Truhen darf man nur aus der Nähe sichern (wie beim Anschauen mit /truhe). */
-    public boolean nearEnough(Player player, Block block) {
+    /** Für Tests: festlegen, welchen Block ein Spieler anschaut. */
+    void setTargetFinder(Function<Player, Block> targetFinder) {
+        this.targetFinder = targetFinder;
+    }
+
+    /** Block, den der Spieler in Reichweite anschaut (Sichtlinie, keine Wand dazwischen), sonst null. */
+    public @Nullable Block targetBlock(Player player) {
+        return targetFinder.apply(player);
+    }
+
+    /**
+     * Schaut der Spieler diese Truhe (oder die andere Hälfte der Doppeltruhe) gerade an, in Reichweite und
+     * ohne Wand dazwischen? Gleiche Regel wie bei /truhe – ein umgebauter Mod kann so nichts durch Wände tun.
+     */
+    public boolean inReach(Player player, Block block) {
         if (!player.getWorld().equals(block.getWorld())) {
             return false;
         }
-        double max = plugin.settings().targetDistance() + 1.5;
-        return player.getEyeLocation().distanceSquared(block.getLocation().add(0.5, 0.5, 0.5)) <= max * max;
+        Block target = targetBlock(player);
+        if (target == null) {
+            return false;
+        }
+        if (target.equals(block)) {
+            return true;
+        }
+        Block other = locks.otherHalf(block);
+        return other != null && other.equals(target);
     }
 
     public Result lock(Player player, Block block) {
@@ -41,7 +64,7 @@ public final class ChestService {
                     ? Result.fail("already-locked")
                     : Result.fail("locked-by-other", placeholder("owner", nameOf(lock.owner())));
         }
-        if (!nearEnough(player, block)) {
+        if (!inReach(player, block)) {
             return Result.fail("too-far");
         }
         locks.setLock(block, ContainerLock.ownedBy(player.getUniqueId()));
@@ -64,7 +87,7 @@ public final class ChestService {
         ContainerLock lock = locks.getLock(block);
         if (lock == null) {
             // Ungesicherte Truhe: beim ersten Teilen automatisch sichern.
-            if (!nearEnough(player, block)) {
+            if (!inReach(player, block)) {
                 return Result.fail("too-far");
             }
             lock = ContainerLock.ownedBy(player.getUniqueId());

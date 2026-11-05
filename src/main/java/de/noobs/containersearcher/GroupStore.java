@@ -60,7 +60,8 @@ public final class GroupStore {
         }
     }
 
-    private record Invite(String groupKey, UUID inviter, long expiresAt) {
+    /** Die Einladung hängt an genau dieser Gruppe – nicht am Namen, der nach dem Auflösen neu vergeben werden kann. */
+    private record Invite(Group group, UUID inviter, long expiresAt) {
     }
 
     /** Offene Einladung: in welche Gruppe, von wem. */
@@ -186,6 +187,7 @@ public final class GroupStore {
         group.members.remove(player);
         if (group.members.isEmpty()) {
             groups.remove(group.key());
+            invites.values().removeIf(invite -> invite.group() == group);
         } else if (group.leader.equals(player)) {
             group.leader = group.members.iterator().next();
         }
@@ -197,14 +199,20 @@ public final class GroupStore {
         group.members.forEach(byMember::remove);
         group.members.clear();
         groups.remove(group.key());
-        invites.values().removeIf(invite -> invite.groupKey().equals(group.key()));
+        invites.values().removeIf(invite -> invite.group() == group);
         save();
     }
 
     // ------------------------------------------------------------------ Einladungen (nur im Speicher)
 
     public void invite(Group group, UUID inviter, UUID invitee, long timeoutMillis) {
-        invites.put(invitee, new Invite(group.key(), inviter, System.currentTimeMillis() + timeoutMillis));
+        invites.put(invitee, new Invite(group, inviter, System.currentTimeMillis() + timeoutMillis));
+    }
+
+    /** Gilt die Einladung noch: nicht abgelaufen und genau diese Gruppe existiert weiterhin? */
+    private boolean valid(Invite invite) {
+        return invite.expiresAt() >= System.currentTimeMillis()
+                && groups.get(invite.group().key()) == invite.group();
     }
 
     /** Offene, gültige Einladung ansehen, ohne sie einzulösen. */
@@ -213,27 +221,23 @@ public final class GroupStore {
         if (invite == null) {
             return null;
         }
-        Group group = groups.get(invite.groupKey());
-        if (group == null || invite.expiresAt() < System.currentTimeMillis()) {
+        if (!valid(invite)) {
             invites.remove(invitee);
             return null;
         }
-        return new PendingInvite(group, invite.inviter());
+        return new PendingInvite(invite.group(), invite.inviter());
     }
 
     /** Gültige Einladung einlösen (wird dabei entfernt). */
     public @Nullable Group takeInvite(UUID invitee) {
         Invite invite = invites.remove(invitee);
-        if (invite == null || invite.expiresAt() < System.currentTimeMillis()) {
-            return null;
-        }
-        return groups.get(invite.groupKey());
+        return invite != null && valid(invite) ? invite.group() : null;
     }
 
     /** @return Gruppe der abgelehnten Einladung oder null */
     public @Nullable Group declineInvite(UUID invitee) {
         Invite invite = invites.remove(invitee);
-        return invite == null ? null : groups.get(invite.groupKey());
+        return invite != null && valid(invite) ? invite.group() : null;
     }
 
     private static String key(String name) {

@@ -172,6 +172,66 @@ class GroupTest {
         assertTrue(opens(ben, annasChest), "Öffnen geht weiterhin");
     }
 
+    /** Alte Einladung darf nicht in eine neue, gleichnamige Gruppe eines anderen Spielers führen. */
+    @Test
+    void staleInviteDoesNotJoinRecreatedGroup() {
+        anna.performCommand("gruppe erstellen Noobs");
+        anna.performCommand("gruppe einladen Ben");
+        anna.performCommand("gruppe verlassen"); // letztes Mitglied → Gruppe gelöscht
+        carl.performCommand("gruppe erstellen Noobs");
+
+        ben.performCommand("gruppe annehmen");
+        assertNull(groups.groupOf(ben.getUniqueId()));
+        assertFalse(groups.sameGroup(carl.getUniqueId(), ben.getUniqueId()));
+    }
+
+    private String infoText(PlayerMock player, Block block) {
+        plugin.chestService().setTargetFinder(p -> p.equals(player) ? block : null);
+        while (player.nextComponentMessage() != null) {
+            // alte Nachrichten verwerfen
+        }
+        player.performCommand("truhe info");
+        StringBuilder text = new StringBuilder();
+        net.kyori.adventure.text.Component line;
+        while ((line = player.nextComponentMessage()) != null) {
+            text.append(net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(line)).append('\n');
+        }
+        return text.toString();
+    }
+
+    /** /truhe info: Fremde sehen nur den Besitzer, Freunde des Besitzers sieht nur der Besitzer. */
+    @Test
+    void chestInfoOnlyShowsWhatYouMaySee() {
+        Block chest = chestOf(anna, 0);
+        plugin.locks().setLock(chest, plugin.locks().getLock(chest).withShared(ben.getUniqueId()));
+        plugin.trust().add(anna.getUniqueId(), server.addPlayer("Dora").getUniqueId());
+
+        String stranger = infoText(carl, chest);
+        assertTrue(stranger.contains("Anna"), stranger);
+        assertFalse(stranger.contains("Ben"), "Fremder sieht nicht, mit wem geteilt ist: " + stranger);
+        assertFalse(stranger.contains("Dora"), stranger);
+
+        String member = infoText(ben, chest);
+        assertTrue(member.contains("Ben"), member);
+        assertFalse(member.contains("Dora"), "Nur der Besitzer sieht seine Freunde: " + member);
+
+        String owner = infoText(anna, chest);
+        assertTrue(owner.contains("Ben") && owner.contains("Dora"), owner);
+    }
+
+    /** Tab-Vervollständigung bei /truhe entziehen verrät Fremden keine Freigaben. */
+    @Test
+    void unshareSuggestionsOnlyForManagers() {
+        Block chest = chestOf(anna, 0);
+        plugin.locks().setLock(chest, plugin.locks().getLock(chest).withShared(ben.getUniqueId()));
+        plugin.chestService().setTargetFinder(p -> chest);
+        org.bukkit.command.PluginCommand truhe = plugin.getCommand("truhe");
+
+        assertEquals(java.util.List.of(), truhe.tabComplete(carl, "truhe", new String[]{"entziehen", ""}));
+        assertEquals(java.util.List.of(), truhe.tabComplete(ben, "truhe", new String[]{"entziehen", ""}));
+        assertEquals(java.util.List.of("Ben"), truhe.tabComplete(anna, "truhe", new String[]{"entziehen", ""}));
+    }
+
     @Test
     void groupsSurviveRestart() {
         annaAndBenFormGroup();

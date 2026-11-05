@@ -7,7 +7,7 @@ no-permission: "<red>У вас нет на это прав."
 no-target: "<red>Посмотрите на сундук или бочку (не дальше <distance> блоков)."
 unknown-player: "<red>Игрок <white><player></white> ни разу не заходил на сервер."
 reloaded: "<green>Конфигурация перезагружена."
-too-far: "<red>Слишком далеко – подойдите ближе к сундуку, чтобы запереть его."
+too-far: "<red>Посмотрите на сундук вблизи, чтобы запереть его."
 chest-unavailable: "<red>Сундук не найден – он рядом и загружен?"
 
 usage-share: "<red>Использование: <white>/<label> share [игрок]"
@@ -50,6 +50,11 @@ info:
   - "<gold>Владелец: <white><owner>"
   - "<gold>Доступ есть у: <white><shared>"
   - "<gold>Друзья владельца: <white><friends>"
+  - "<gold>Группа владельца: <white><group>"
+info-member:
+  - "<dark_gray>――――――― <gold>Сундук</gold> ―――――――"
+  - "<gold>Владелец: <white><owner>"
+  - "<gold>Доступ есть у: <white><shared>"
   - "<gold>Группа владельца: <white><group>"
 
 # друзья
